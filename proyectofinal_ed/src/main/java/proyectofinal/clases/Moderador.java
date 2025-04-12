@@ -6,4 +6,8 @@ public class Moderador extends Usuario{
         super(nombre, correo, contrasenia);
     }
 
+    public void eliminarContenido(Contenido cont){}
+
+    public void generarReporte(){}
+
 }
