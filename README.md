@@ -4,3 +4,6 @@ Proyecto Final | Estructura de Datos | Grupo-02D.
 - Celeste Buitrago Ramírez
 - Juan Sebastián Londoño Ramírez
 - Sara Carolina Varón Correa
+
+Enlace diagrama de clases
+https://app.diagrams.net/#G1R3tFtikxTb8MlGoX1AbQrXDexA5R8tlT#%7B%22pageId%22%3A%22C5RBs43oDa-KdzZeNtuy%22%7D
