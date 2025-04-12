@@ -1,4 +1,7 @@
-package proyectofinal.clases;
+package main.java.proyectofinal.clases;
+
+import java.time.LocalDateTime;
+import java.util.LinkedList;
 
 public class Contenido {
     private String titulo;
@@ -19,50 +22,50 @@ public class Contenido {
 
     //getters and setters
     public String getTitulo() {
-        return titulo;
+        return this.titulo;
     }
 
-    public void setTitulo(String titulo) {
+    public void setTitulo(final String titulo) {
         this.titulo = titulo;
     }
 
     public String getAutor() {
-        return autor;
+        return this.autor;
     }
 
-    public void setAutor(String autor) {
+    public void setAutor(final String autor) {
         this.autor = autor;
     }
 
     public LocalDateTime getFecha() {
-        return fecha;
+        return this.fecha;
     }
 
-    public void setFecha(LocalDateTime fecha) {
+    public void setFecha(final LocalDateTime fecha) {
         this.fecha = fecha;
     }
 
     public String getTipo() {
-        return tipo;
+        return this.tipo;
     }
 
-    public void setTipo(String tipo) {
+    public void setTipo(final String tipo) {
         this.tipo = tipo;
     }
 
     public String getTema() {
-        return tema;
+        return this.tema;
     }
 
-    public void setTema(String tema) {
+    public void setTema(final String tema) {
         this.tema = tema;
     }
 
     public LinkedList<String> getValoraciones() {
-        return valoraciones;
+        return this.valoraciones;
     }
 
-    public void setValoraciones(LinkedList<String> valoraciones) {
+    public void setValoraciones(final LinkedList<String> valoraciones) {
         this.valoraciones = valoraciones;
     }
 }

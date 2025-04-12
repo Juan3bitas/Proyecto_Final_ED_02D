@@ -1,4 +1,4 @@
-package proyectofinal.clases;
+package main.java.proyectofinal.clases;
 
 public class Usuario {
     private String nombre;
@@ -11,28 +11,28 @@ public class Usuario {
         this.contrasenia = contrasenia;
     }
 
+    //getters and setters
     public String getNombre() {
-        return nombre;
+        return this.nombre;
     }
 
-    public void setNombre(String nombre) {
+    public void setNombre(final String nombre) {
         this.nombre = nombre;
     }
 
     public String getCorreo() {
-        return correo;
+        return this.correo;
     }
 
-    public void setCorreo(String correo) {
+    public void setCorreo(final String correo) {
         this.correo = correo;
     }
 
     public String getContrasenia() {
-        return contrasenia;
+        return this.contrasenia;
     }
 
-    public void setContrasenia(String contrasenia) {
+    public void setContrasenia(final String contrasenia) {
         this.contrasenia = contrasenia;
     }
-
 }

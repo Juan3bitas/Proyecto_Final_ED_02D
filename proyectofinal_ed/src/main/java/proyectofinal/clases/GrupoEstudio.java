@@ -1,4 +1,7 @@
-package proyectofinal.clases;
+package main.java.proyectofinal.clases;
+
+import java.time.LocalDateTime;
+import java.util.LinkedList;
 
 public class GrupoEstudio {
     private String nombre;
@@ -15,34 +18,34 @@ public class GrupoEstudio {
 
     //getters and setters
     public String getNombre() {
-        return nombre;
+        return this.nombre;
     }
 
-    public void setNombre(String nombre) {
+    public void setNombre(final String nombre) {
         this.nombre = nombre;
     }
 
     public String getDescripcion() {
-        return descripcion;
+        return this.descripcion;
     }
 
-    public void setDescripcion(String descripcion) {
+    public void setDescripcion(final String descripcion) {
         this.descripcion = descripcion;
     }
 
     public LinkedList<Estudiante> getMiembros() {
-        return miembros;
+        return this.miembros;
     }
 
-    public void setMiembros(LinkedList<Estudiante> miembros) {
+    public void setMiembros(final LinkedList<Estudiante> miembros) {
         this.miembros = miembros;
     }
 
     public LocalDateTime getFechaCreacion() {
-        return fechaCreacion;
+        return this.fechaCreacion;
     }
 
-    public void setFechaCreacion(LocalDateTime fechaCreacion) {
+    public void setFechaCreacion(final LocalDateTime fechaCreacion) {
         this.fechaCreacion = fechaCreacion;
     }
 }

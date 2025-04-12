@@ -1,8 +1,8 @@
-package proyectofinal.clases;
+package main.java.proyectofinal.clases;
 
 public class Moderador extends Usuario{
 
-    public Moderador(String nombre, String correo, String contrasenia) {
+    public Moderador(String nombre, String correo, String contrasenia){
         super(nombre, correo, contrasenia);
     }
 
