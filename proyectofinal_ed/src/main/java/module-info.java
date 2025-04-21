@@ -1,7 +1,8 @@
 module proyectofinal {
     requires javafx.controls;
     requires javafx.fxml;
+    requires transitive java.logging;
 
-    opens proyectofinal to javafx.fxml;
-    exports proyectofinal;
+
+    opens main.java.proyectofinal to javafx.fxml;
 }
