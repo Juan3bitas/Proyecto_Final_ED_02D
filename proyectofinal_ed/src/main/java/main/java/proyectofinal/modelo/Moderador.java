@@ -1,5 +1,6 @@
 package main.java.proyectofinal.modelo;
 
+import main.java.proyectofinal.excepciones.UsuarioNoSePudoSuspenderException;
 import main.java.proyectofinal.utils.UtilModerador;
 
 public class Moderador extends Usuario{
@@ -11,8 +12,8 @@ public class Moderador extends Usuario{
         super(id, nombre, correo, contrasenia);
     }
 
-    public void suspenderUsuario(Usuario usuario){
-        utilModerador.suspenderUsuarioMod(usuario);
+    public void suspenderUsuario(String usuarioId, int tiempoDias) throws UsuarioNoSePudoSuspenderException{
+        utilModerador.suspenderUsuarioMod(usuarioId, tiempoDias);
     }
     
     public void eliminarContenido(Contenido cont){

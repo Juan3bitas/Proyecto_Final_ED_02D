@@ -17,4 +17,14 @@ public class UtilGrupoEstudiante {
         throw new UnsupportedOperationException("Unimplemented method 'agregarContenido'");
     }
 
+    public Object buscarUsuario(String usuarioId) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'buscarUsuario'");
+    }
+
+    public void suspenderUsuario(Object buscarUsuario, int tiempoDias) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'suspenderUsuario'");
+    }
+
 }
