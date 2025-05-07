@@ -1,26 +1,35 @@
 package main.java.proyectofinal.modelo;
 
+import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.LinkedList;
+import java.util.Objects;
 
 import main.java.proyectofinal.utils.UtilId;
 
-public class Contenido {
+/**
+ * Representa un contenido educativo (archivo, enlace, video) publicado por un usuario.
+ * Incluye valoraciones y metadatos como tema y autor.
+ */
+
+public class Contenido implements Serializable {
+    private static final long serialVersionUID = 1L;
+    
     private String id;
     private String titulo;
     private String autor;
     private LocalDateTime fecha;
-    private String tipo;
+    private TipoContenido tipo;
     private String tema;
     private LinkedList<Valoracion> valoraciones;
 
-    public Contenido(String id, String titulo, String autor, LocalDateTime fecha, String tipo, String tema) {
+    public Contenido(String id, String titulo, String autor, LocalDateTime fecha, TipoContenido tipo, String tema) {
         this.id = (id == null || id.isEmpty()) ? UtilId.generarIdAleatorio() : id;
-        this.titulo = titulo;
-        this.autor = autor;
-        this.fecha = fecha;
-        this.tipo = tipo;
-        this.tema = tema;
+        this.titulo = Objects.requireNonNull(titulo, "El título no puede ser nulo");
+        this.autor = Objects.requireNonNull(autor, "El autor no puede ser nulo");
+        this.fecha = Objects.requireNonNull(fecha, "La fecha no puede ser nula");
+        this.tipo = Objects.requireNonNull(tipo, "El tipo no puede ser nulo");
+        this.tema = Objects.requireNonNull(tema, "El tema no puede ser nulo");
         this.valoraciones = new LinkedList<>();
     }
 
@@ -41,7 +50,10 @@ public class Contenido {
         return this.autor;
     }
 
-    public void setAutor(final String autor) {
+    public void setAutor(String autor) {
+        if (autor == null || autor.trim().isEmpty()) {
+            throw new IllegalArgumentException("El autor no puede estar vacío");
+        }
         this.autor = autor;
     }
 
@@ -53,11 +65,11 @@ public class Contenido {
         this.fecha = fecha;
     }
 
-    public String getTipo() {
+    public TipoContenido getTipo() {
         return this.tipo;
     }
 
-    public void setTipo(final String tipo) {
+    public void setTipo(final TipoContenido tipo) {
         this.tipo = tipo;
     }
 
@@ -65,7 +77,10 @@ public class Contenido {
         return this.tema;
     }
 
-    public void setTema(final String tema) {
+    public void setTema(String tema) {
+        if (tema == null || tema.trim().isEmpty()) {
+            throw new IllegalArgumentException("El tema no puede estar vacío");
+        }
         this.tema = tema;
     }
 
@@ -76,4 +91,46 @@ public class Contenido {
     public void setValoraciones(LinkedList<Valoracion> valoraciones) {
         this.valoraciones = valoraciones;
     }
+
+    public double obtenerPromedioValoracion() {
+        if (valoraciones.isEmpty()) return 0.0;
+        double suma = 0;
+        for (Valoracion v : valoraciones) {
+            suma += v.getValor(); 
+        }
+        return suma / valoraciones.size();
+    }
+
+    public void agregarValoracion(Valoracion valoracion) {
+        if (valoracion == null) {
+            throw new IllegalArgumentException("La valoración no puede ser nula");
+        }
+        valoraciones.add(valoracion);
+    }
+
+    @Override
+    public String toString() {
+    return "Contenido{" +
+            "id='" + id + '\'' +
+            ", titulo='" + titulo + '\'' +
+            ", autor='" + autor + '\'' +
+            ", fecha=" + fecha +
+            ", tipo='" + tipo + '\'' +
+            ", tema='" + tema + '\'' +
+            '}';
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Contenido contenido = (Contenido) o;
+        return id.equals(contenido.id);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id);
+    }
+
 }

@@ -1,8 +1,15 @@
 package main.java.proyectofinal.modelo;
 
+/**
+ * Representa una solicitud de ayuda académica con un nivel de urgencia y estado (PENDIENTE/RESUELTA).
+ * Delega la persistencia a UtilSolicitudAyuda.
+ */
+
 import java.util.Date;
+import java.util.Objects;
 
 import main.java.proyectofinal.utils.UtilId;
+import main.java.proyectofinal.utils.UtilSolicitudAyuda;
 
 public class SolicitudAyuda {
     private String id;
@@ -12,25 +19,20 @@ public class SolicitudAyuda {
     private Urgencia urgencia;
     private String solicitanteId ;
     private Estado estado;
+    private UtilSolicitudAyuda utilSolicitud;
 
     public SolicitudAyuda(){
     }
 
-    public SolicitudAyuda (String id, String tema, String descripcion, Date fecha, Urgencia urgencia, String solicitanteId){
+    public SolicitudAyuda(String id, String tema, String descripcion, Date fecha, Urgencia urgencia, String solicitanteId) {
         this.id = (id == null || id.isEmpty()) ? UtilId.generarIdAleatorio() : id;
-        this.tema=tema;
-        this.descripcion=descripcion;
-        this.fecha = fecha == null  ? new Date() : fecha;
-        this.urgencia=urgencia;
-        this.solicitanteId=solicitanteId;
-    }
-
-    public void cambiarEstado(){
-        if(this.estado==Estado.PENDIENTE){
-            setEstado(Estado.RESUELTA);
-        } else {
-            setEstado(Estado.PENDIENTE);
-        }
+        this.tema = Objects.requireNonNull(tema, "El tema no puede ser nulo");
+        this.descripcion = Objects.requireNonNull(descripcion, "La descripción no puede ser nula");
+        this.fecha = (fecha == null) ? new Date() : fecha;
+        this.urgencia = Objects.requireNonNull(urgencia, "La urgencia no puede ser nula");
+        this.solicitanteId = Objects.requireNonNull(solicitanteId, "El ID del solicitante no puede ser nulo");
+        this.estado = Estado.PENDIENTE; 
+        this.utilSolicitud = UtilSolicitudAyuda.getInstance(); 
     }
 
     //Getters y setters
@@ -44,7 +46,7 @@ public class SolicitudAyuda {
     }
 
     public void setTema(String tema) {
-        this.tema = tema;
+        this.tema = Objects.requireNonNull(tema, "El tema no puede ser nulo");
     }
 
     public String getDescripcion() {
@@ -52,7 +54,7 @@ public class SolicitudAyuda {
     }
 
     public void setDescripcion(String descripcion) {
-        this.descripcion = descripcion;
+        this.descripcion = Objects.requireNonNull(descripcion, "La descripción no puede ser nula");
     }
 
     public Date getFecha() {
@@ -77,6 +79,12 @@ public class SolicitudAyuda {
 
     public void setEstado(Estado estado) {
         this.estado = estado;
+    }
+
+    public void cambiarEstado() {
+        Estado nuevoEstado = (this.estado == Estado.PENDIENTE) ? Estado.RESUELTA : Estado.PENDIENTE;
+        this.setEstado(nuevoEstado);
+        utilSolicitud.cambiarEstadoSolicitud(this.id);
     }
     
 }

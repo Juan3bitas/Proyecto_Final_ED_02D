@@ -1,7 +1,13 @@
 package main.java.proyectofinal.modelo;
 
+/**
+ * Representa un grupo de estudio con miembros y contenidos compartidos.
+ * Delega la persistencia a UtilGrupoEstudiante.
+ */
+
 import java.util.Date;
 import java.util.LinkedList;
+import java.util.Objects;
 
 import main.java.proyectofinal.utils.UtilGrupoEstudiante;
 import main.java.proyectofinal.utils.UtilId;
@@ -15,13 +21,15 @@ public class GrupoEstudio {
     private Date fechaCreacion;
     private UtilGrupoEstudiante utilGrupoEstudiante;
 
-    public GrupoEstudio(String id, String nombre, String descripcion,LinkedList<String> idMiembros,LinkedList<String> idContenidos, Date fechaCreacion) {
+    public GrupoEstudio(String id, String nombre, String descripcion, LinkedList<String> idMiembros, 
+                LinkedList<String> idContenidos, Date fechaCreacion) {
         this.idGrupo = (id == null || id.isEmpty()) ? UtilId.generarIdAleatorio() : id;
-        this.nombre = nombre;
-        this.descripcion = descripcion;
+        this.nombre = Objects.requireNonNull(nombre, "El nombre no puede ser nulo");
+        this.descripcion = descripcion; // Opcional: validar si es requerido
         this.idMiembros = (idMiembros != null) ? idMiembros : new LinkedList<>();
         this.idContenidos = (idContenidos != null) ? idContenidos : new LinkedList<>();
-        this.fechaCreacion = fechaCreacion == null  ? new Date() : fechaCreacion;
+        this.fechaCreacion = (fechaCreacion == null) ? new Date() : fechaCreacion;
+        this.utilGrupoEstudiante = UtilGrupoEstudiante.getInstance(); // Singleton
     }
 
     //getters and setters
@@ -32,8 +40,8 @@ public class GrupoEstudio {
         return this.nombre;
     }
 
-    public void setNombre(final String nombre) {
-        this.nombre = nombre;
+    public void setNombre(String nombre) {
+        this.nombre = Objects.requireNonNull(nombre, "El nombre no puede ser nulo");
     }
 
     public String getDescripcion() {
@@ -60,16 +68,8 @@ public class GrupoEstudio {
         this.fechaCreacion = fechaCreacion;
     }
 
-    public void setIdMiembros(LinkedList<String> idMiembros) {
-        this.idMiembros = idMiembros;
-    }
-
     public LinkedList<String> getIdContenidos() {
         return idContenidos;
-    }
-
-    public void setIdContenidos(LinkedList<String> idContenidos) {
-        this.idContenidos = idContenidos;
     }
 
     public void agregarMiembro(String idEstudiante){
@@ -84,9 +84,9 @@ public class GrupoEstudio {
         }
     }
 
-    public void agregarContenido(String idContenido){
-        if(utilGrupoEstudiante.agregarContenido(idContenido)){
-            idMiembros.add(idContenido);
+    public void agregarContenido(String idContenido) {
+        if (utilGrupoEstudiante.agregarContenido(idContenido)) {
+            idContenidos.add(idContenido); // Corregido: añade a idContenidos
         }
     }
 }

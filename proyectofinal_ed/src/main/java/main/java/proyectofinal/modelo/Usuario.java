@@ -1,5 +1,12 @@
 package main.java.proyectofinal.modelo;
 
+/**
+ * Clase abstracta que representa un usuario base en el sistema.
+ * Las clases concretas (Estudiante, Moderador) deben extenderla.
+ */
+
+import java.util.Objects;
+
 import main.java.proyectofinal.utils.UtilId;
 
 public abstract class Usuario {
@@ -11,10 +18,9 @@ public abstract class Usuario {
     public Usuario(){}
     public Usuario(String id, String nombre, String correo, String contrasenia) {
         this.id = (id == null || id.isEmpty()) ? UtilId.generarIdAleatorio() : id;
-        this.nombre = nombre;
-        this.correo = correo;
-        this.contrasenia = contrasenia;
-        UtilId.getInstance();
+    this.nombre = Objects.requireNonNull(nombre, "El nombre no puede ser nulo");
+    this.correo = Objects.requireNonNull(correo, "El correo no puede ser nulo");
+    this.contrasenia = Objects.requireNonNull(contrasenia, "La contraseña no puede ser nula");
     }
 
     //getters and setters
@@ -44,5 +50,26 @@ public abstract class Usuario {
 
     public void setContrasenia(final String contrasenia) {
         this.contrasenia = contrasenia;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Usuario usuario = (Usuario) o;
+        return id.equals(usuario.id);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id);
+    }
+
+    @Override
+    public String toString() {
+        return String.format(
+            "Usuario [ID: %s, Nombre: %s, Correo: %s]",
+            id, nombre, correo
+        );
     }
 }

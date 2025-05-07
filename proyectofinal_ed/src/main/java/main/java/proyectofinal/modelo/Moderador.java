@@ -1,28 +1,47 @@
 package main.java.proyectofinal.modelo;
 
+/**
+ * Representa un moderador con permisos para suspender usuarios, eliminar contenidos y generar reportes.
+ * Delega las operaciones complejas a UtilModerador.
+ */
+
+import java.util.List;
+
+import main.java.proyectofinal.excepciones.ContenidoNoSePudoEliminar;
 import main.java.proyectofinal.excepciones.UsuarioNoSePudoSuspenderException;
 import main.java.proyectofinal.utils.UtilModerador;
 
-public class Moderador extends Usuario{
+public class Moderador extends Usuario {
     private UtilModerador utilModerador;
 
-    public Moderador(){super();    
-    }
-    public Moderador(String id, String nombre, String correo, String contrasenia){
-        super(id, nombre, correo, contrasenia);
+    public Moderador() {
+        super();
+        this.utilModerador = UtilModerador.getInstance();
     }
 
-    public void suspenderUsuario(String usuarioId, int tiempoDias) throws UsuarioNoSePudoSuspenderException{
+    public Moderador(String id, String nombre, String correo, String contrasenia) {
+        super(id, nombre, correo, contrasenia);
+        this.utilModerador = UtilModerador.getInstance();
+    }
+
+    public void suspenderUsuario(String usuarioId, int tiempoDias) throws UsuarioNoSePudoSuspenderException {
         utilModerador.suspenderUsuarioMod(usuarioId, tiempoDias);
     }
-    
-    public void eliminarContenido(Contenido cont){
-        utilModerador.eliminarContenidoMod(cont);
+
+    public void eliminarContenido(String contId) throws ContenidoNoSePudoEliminar {
+        utilModerador.eliminarContenidoMod(contId);
     }
 
-    public void generarReporte(String tipo){
+    public void generarReporte(TipoReporte tipo) {
         utilModerador.generarReporte(tipo);
     }
 
+    public void visualizarGrafoAfinidad() {
+        utilModerador.mostrarGrafo();
+    }
+
+    public List<Estudiante> detectarComunidades() {
+        return utilModerador.obtenerComunidades();
+    }
 
 }

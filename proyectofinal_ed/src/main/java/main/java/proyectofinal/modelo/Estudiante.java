@@ -1,12 +1,14 @@
 package main.java.proyectofinal.modelo;
 
+
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Objects;
 
 import main.java.proyectofinal.utils.UtilEstudiante;
 
-public class Estudiante extends Usuario{
+public class Estudiante extends Usuario {
     private LinkedList<String> idsContenidosPublicados;
     private List<String> intereses;
     private UtilEstudiante utilEstudiante;
@@ -20,6 +22,7 @@ public class Estudiante extends Usuario{
         this.idsContenidosPublicados = (idsContenidosPublicados != null) ? idsContenidosPublicados : new LinkedList<>();
         //Lo mismo para este
         this.intereses = (intereses != null) ? intereses : new ArrayList<>();
+        this.utilEstudiante = UtilEstudiante.getInstance();
     }
     
     public void publicarCont(Contenido cont) {
@@ -48,21 +51,26 @@ public class Estudiante extends Usuario{
         }
     }
 
-    public void obtenerContenidosPublicados(){
-        //??
+    public List<Contenido> obtenerContenidosPublicados() {
+        return utilEstudiante.obtenerContenidosDeEstudiante(this.getId()); 
+        // Asume que UtilEstudiante tiene este método que internamente usa UtilRedSocial
     }
-/* 
-    public void valorarContenido(){
-
+    public void agregarInteres(String interes) {
+        Objects.requireNonNull(interes, "El interés no puede ser nulo");
+        if (!intereses.contains(interes)) {
+            intereses.add(interes);
+            // El grafo se actualiza a través de UtilEstudiante:
+            utilEstudiante.actualizarIntereses(this, interes);
+        }
+    }
+    public void solicitarAyuda(SolicitudAyuda ayuda){
+        utilEstudiante.pedirAyuda(this.getId(), ayuda);
     }
 
-*/
-    public void solicitarAyuda(){
-        utilEstudiante.pedirAyuda(this.getId());
-    }
-
-    public void agregarIntereses(String interes){
-        intereses.add(interes);
+    public void valorarContenido(Contenido contenido, int puntuacion, String comentario) {
+        if (contenido == null) throw new IllegalArgumentException("Contenido nulo");
+        utilEstudiante.agregarValoracion(this.getId(), contenido.getId(), puntuacion, comentario);
+        // UtilEstudiante maneja la lógica con UtilRedSocial y PersistenceManager
     }
 
     //getters and setters
