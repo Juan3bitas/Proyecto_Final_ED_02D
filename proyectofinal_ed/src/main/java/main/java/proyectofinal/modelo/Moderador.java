@@ -8,6 +8,7 @@ package main.java.proyectofinal.modelo;
 import java.util.List;
 
 import main.java.proyectofinal.excepciones.ContenidoNoSePudoEliminar;
+import main.java.proyectofinal.excepciones.OperacionFallidaException;
 import main.java.proyectofinal.excepciones.UsuarioNoSePudoSuspenderException;
 import main.java.proyectofinal.utils.UtilModerador;
 
@@ -19,8 +20,8 @@ public class Moderador extends Usuario {
         this.utilModerador = UtilModerador.getInstance();
     }
 
-    public Moderador(String id, String nombre, String correo, String contrasenia) {
-        super(id, nombre, correo, contrasenia);
+    public Moderador(String id, String nombre, String correo, String contrasenia, boolean suspendido, int diasSuspension) {
+        super(id, nombre, correo, contrasenia, suspendido, diasSuspension);
         this.utilModerador = UtilModerador.getInstance();
     }
 
@@ -32,7 +33,7 @@ public class Moderador extends Usuario {
         utilModerador.eliminarContenidoMod(contId);
     }
 
-    public void generarReporte(TipoReporte tipo) {
+    public void generarReporte(TipoReporte tipo) throws OperacionFallidaException {
         utilModerador.generarReporte(tipo);
     }
 
@@ -40,7 +41,7 @@ public class Moderador extends Usuario {
         utilModerador.mostrarGrafo();
     }
 
-    public List<Estudiante> detectarComunidades() {
+    public List<GrupoEstudio> detectarComunidades() {
         return utilModerador.obtenerComunidades();
     }
 

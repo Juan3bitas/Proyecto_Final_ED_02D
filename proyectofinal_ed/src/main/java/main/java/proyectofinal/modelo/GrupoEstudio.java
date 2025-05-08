@@ -9,7 +9,8 @@ import java.util.Date;
 import java.util.LinkedList;
 import java.util.Objects;
 
-import main.java.proyectofinal.utils.UtilGrupoEstudiante;
+import main.java.proyectofinal.excepciones.OperacionFallidaException;
+import main.java.proyectofinal.utils.UtilGrupoEstudio;
 import main.java.proyectofinal.utils.UtilId;
 
 public class GrupoEstudio {
@@ -19,7 +20,7 @@ public class GrupoEstudio {
     private LinkedList<String> idMiembros;
     private LinkedList<String> idContenidos;
     private Date fechaCreacion;
-    private UtilGrupoEstudiante utilGrupoEstudiante;
+    private UtilGrupoEstudio utilGrupoEstudio;
 
     public GrupoEstudio(String id, String nombre, String descripcion, LinkedList<String> idMiembros, 
                 LinkedList<String> idContenidos, Date fechaCreacion) {
@@ -29,7 +30,7 @@ public class GrupoEstudio {
         this.idMiembros = (idMiembros != null) ? idMiembros : new LinkedList<>();
         this.idContenidos = (idContenidos != null) ? idContenidos : new LinkedList<>();
         this.fechaCreacion = (fechaCreacion == null) ? new Date() : fechaCreacion;
-        this.utilGrupoEstudiante = UtilGrupoEstudiante.getInstance(); // Singleton
+        this.utilGrupoEstudio = UtilGrupoEstudio.getInstance(); // Singleton
     }
 
     //getters and setters
@@ -72,20 +73,20 @@ public class GrupoEstudio {
         return idContenidos;
     }
 
-    public void agregarMiembro(String idEstudiante){
-        if(utilGrupoEstudiante.agregarMiembro(idEstudiante)){
+    public void agregarMiembro(String idEstudiante) throws OperacionFallidaException{
+        if(utilGrupoEstudio.agregarMiembro(this.getIdGrupo(), idEstudiante)){
             idMiembros.add(idEstudiante);
         }
     }
 
-    public void eliminarMiembro(String idEstudiante){
-        if(utilGrupoEstudiante.eliminarMiembro(idEstudiante)){
+    public void eliminarMiembro(String idEstudiante) throws OperacionFallidaException{
+        if(utilGrupoEstudio.eliminarMiembro(this.getIdGrupo(), idEstudiante)){
             idMiembros.remove(idEstudiante);
         }
     }
 
-    public void agregarContenido(String idContenido) {
-        if (utilGrupoEstudiante.agregarContenido(idContenido)) {
+    public void agregarContenido(String idContenido) throws OperacionFallidaException {
+        if (utilGrupoEstudio.agregarContenido(this.getIdGrupo(), idContenido)) {
             idContenidos.add(idContenido); // Corregido: añade a idContenidos
         }
     }

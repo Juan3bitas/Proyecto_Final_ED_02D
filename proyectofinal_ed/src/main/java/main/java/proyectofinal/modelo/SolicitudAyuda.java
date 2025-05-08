@@ -8,6 +8,8 @@ package main.java.proyectofinal.modelo;
 import java.util.Date;
 import java.util.Objects;
 
+import main.java.proyectofinal.excepciones.EstadoNoValidoException;
+import main.java.proyectofinal.excepciones.SolicitudNoEncontradaException;
 import main.java.proyectofinal.utils.UtilId;
 import main.java.proyectofinal.utils.UtilSolicitudAyuda;
 
@@ -81,10 +83,15 @@ public class SolicitudAyuda {
         this.estado = estado;
     }
 
-    public void cambiarEstado() {
-        Estado nuevoEstado = (this.estado == Estado.PENDIENTE) ? Estado.RESUELTA : Estado.PENDIENTE;
+    public void cambiarEstado(Estado nuevoEstado) throws SolicitudNoEncontradaException, EstadoNoValidoException {
         this.setEstado(nuevoEstado);
-        utilSolicitud.cambiarEstadoSolicitud(this.id);
+        utilSolicitud.cambiarEstadoSolicitud(this.id, nuevoEstado);
     }
+
+    public void setSolicitanteId(String solicitanteId) {
+        this.solicitanteId = solicitanteId;
+    }
+
+
     
 }

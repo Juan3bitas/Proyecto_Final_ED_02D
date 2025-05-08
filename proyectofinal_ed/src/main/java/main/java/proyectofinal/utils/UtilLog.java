@@ -1,59 +1,63 @@
 package main.java.proyectofinal.utils;
 
-
 import java.io.IOException;
-import java.io.Serializable;
+
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.logging.*;
 
-public class UtilLog implements Serializable {
+public class UtilLog{
     private static UtilLog instancia;
-    private static final Logger logger = Logger.getLogger(UtilLog.class.getName());
-    private UtilProperties utilProperties;
+    private final Logger logger;  
+    private final UtilProperties utilProperties;
+    private static final DateTimeFormatter DATE_FORMATTER = 
+        DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss"); 
 
     private UtilLog() {
         this.utilProperties = UtilProperties.getInstance();
+        this.logger = Logger.getLogger(UtilLog.class.getName());
+        configurarLogger();
+    }
+
+    private void configurarLogger() {
         try {
             String ruta = utilProperties.obtenerPropiedad("ruta.log");
             FileHandler fileHandler = new FileHandler(ruta, true);
+            fileHandler.setFormatter(new SimpleFormatter());
             logger.addHandler(fileHandler);
+            logger.setUseParentHandlers(false);  
             logger.setLevel(Level.ALL);
-            SimpleFormatter formatter = new SimpleFormatter();
-            fileHandler.setFormatter(formatter);
-            logInfo("Logger configurado correctamente");
+            logInfo("Logger configurado correctamente. Ruta: " + ruta);
         } catch (IOException e) {
-            logger.log(Level.SEVERE, "Error al configurar el logger", e);
+            System.err.println("ERROR CRÍTICO: No se pudo inicializar el logger. " + e.getMessage());
+            throw new RuntimeException("Fallo en la configuración del logger", e);  // Fail-fast
         }
     }
 
-    // se crea la unica intancia de la clase
-    public static UtilLog getInstance() {
+   
+    public static synchronized UtilLog getInstance() {
         if (instancia == null) {
             instancia = new UtilLog();
         }
         return instancia;
     }
 
-    // metodo que registra un mensaje con nivel de severidad
-    public void escribirLog(String mensaje, Level nivel) {
+    private void escribirLog(String mensaje, Level nivel) {
         logger.log(nivel, mensaje);
     }
 
     public void registrarAccion(String tipoUsuario, String accion, String interfaz) {
-        // Formatear la fecha y hora actual
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
-        String fechaHora = LocalDateTime.now().format(formatter);
-
-        // Crear el mensaje de log
-        String mensaje = String.format("Tipo de Usuario: %s, Acción: %s, Interfaz: %s, Fecha y Hora: %s",
-                tipoUsuario, accion, interfaz, fechaHora);
-
-        // Registrar en el log
+        String mensaje = String.format(
+            "[%s] Tipo: %s | Acción: %s | Interfaz: %s",
+            LocalDateTime.now().format(DATE_FORMATTER),
+            tipoUsuario,
+            accion,
+            interfaz
+        );
         escribirLog(mensaje, Level.INFO);
     }
 
-    // Métodos para registrar mensajes en diferentes niveles de severidad
+
     public void logSevere(String mensaje) {
         escribirLog(mensaje, Level.SEVERE);
     }

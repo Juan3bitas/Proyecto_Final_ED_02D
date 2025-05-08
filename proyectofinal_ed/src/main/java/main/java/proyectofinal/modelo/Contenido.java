@@ -1,6 +1,5 @@
 package main.java.proyectofinal.modelo;
 
-import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.LinkedList;
 import java.util.Objects;
@@ -12,8 +11,7 @@ import main.java.proyectofinal.utils.UtilId;
  * Incluye valoraciones y metadatos como tema y autor.
  */
 
-public class Contenido implements Serializable {
-    private static final long serialVersionUID = 1L;
+public class Contenido {
     
     private String id;
     private String titulo;
@@ -21,15 +19,17 @@ public class Contenido implements Serializable {
     private LocalDateTime fecha;
     private TipoContenido tipo;
     private String tema;
+    private String descripcion;
     private LinkedList<Valoracion> valoraciones;
 
-    public Contenido(String id, String titulo, String autor, LocalDateTime fecha, TipoContenido tipo, String tema) {
+    public Contenido(String id, String titulo, String autor, LocalDateTime fecha, TipoContenido tipo,String descripcion, String tema) {
         this.id = (id == null || id.isEmpty()) ? UtilId.generarIdAleatorio() : id;
         this.titulo = Objects.requireNonNull(titulo, "El título no puede ser nulo");
         this.autor = Objects.requireNonNull(autor, "El autor no puede ser nulo");
         this.fecha = Objects.requireNonNull(fecha, "La fecha no puede ser nula");
         this.tipo = Objects.requireNonNull(tipo, "El tipo no puede ser nulo");
         this.tema = Objects.requireNonNull(tema, "El tema no puede ser nulo");
+        this.descripcion = Objects.requireNonNull(tema, "La descripcion no puede ser nulo");
         this.valoraciones = new LinkedList<>();
     }
 
@@ -38,6 +38,14 @@ public class Contenido implements Serializable {
         return this.id;
     }
     
+    public String getDescripcion() {
+        return descripcion;
+    }
+
+    public void setDescripcion(String descripcion) {
+        this.descripcion = descripcion;
+    }
+
     public String getTitulo() {
         return this.titulo;
     }

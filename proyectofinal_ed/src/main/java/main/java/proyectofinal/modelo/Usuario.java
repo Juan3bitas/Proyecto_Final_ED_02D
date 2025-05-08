@@ -14,13 +14,18 @@ public abstract class Usuario {
     private String nombre;
     private String correo;
     private String contrasenia;
+    private boolean suspendido;
+    private int diasSuspension;
     
     public Usuario(){}
-    public Usuario(String id, String nombre, String correo, String contrasenia) {
+    public Usuario(String id, String nombre, String correo, String contrasenia, boolean suspendido, int diasSuspension) {
         this.id = (id == null || id.isEmpty()) ? UtilId.generarIdAleatorio() : id;
-    this.nombre = Objects.requireNonNull(nombre, "El nombre no puede ser nulo");
-    this.correo = Objects.requireNonNull(correo, "El correo no puede ser nulo");
-    this.contrasenia = Objects.requireNonNull(contrasenia, "La contraseña no puede ser nula");
+        this.nombre = Objects.requireNonNull(nombre, "El nombre no puede ser nulo");
+        this.correo = Objects.requireNonNull(correo, "El correo no puede ser nulo");
+        this.contrasenia = Objects.requireNonNull(contrasenia, "La contraseña no puede ser nula");
+        this.suspendido = (suspendido) ? suspendido : false; // Esto es redundante, ya que suspendido siempre será true o false.
+        this.diasSuspension = (diasSuspension > 0) ? diasSuspension : 0;
+
     }
 
     //getters and setters
@@ -28,6 +33,18 @@ public abstract class Usuario {
         return id;
     }
 
+    public boolean isSuspendido() {
+        return suspendido;
+    }
+    public void setSuspendido(boolean suspendido) {
+        this.suspendido = suspendido;
+    }
+    public int getDiasSuspension() {
+        return diasSuspension;
+    }
+    public void setDiasSuspension(int diasSuspension) {
+        this.diasSuspension = diasSuspension;
+    }
     public String getNombre() {
         return this.nombre;
     }
@@ -51,6 +68,8 @@ public abstract class Usuario {
     public void setContrasenia(final String contrasenia) {
         this.contrasenia = contrasenia;
     }
+
+    
 
     @Override
     public boolean equals(Object o) {

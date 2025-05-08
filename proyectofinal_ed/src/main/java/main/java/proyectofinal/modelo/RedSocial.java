@@ -130,7 +130,7 @@ public class RedSocial {
         return new PriorityQueue<>(this.colaSolicitudes);
     }
 
-    protected GrafoAfinidad getGrafoAfinidad() {
+    public GrafoAfinidad getGrafoAfinidad() {
         return this.grafoAfinidad;
     }
 

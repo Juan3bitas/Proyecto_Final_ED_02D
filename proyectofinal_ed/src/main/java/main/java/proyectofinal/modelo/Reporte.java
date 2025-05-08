@@ -26,7 +26,6 @@ public class Reporte {
         this.fechaGeneracion = (fechaGeneracion == null) ? new Date() : fechaGeneracion;
     }
 
-    // ---- Getters y Setters ----
     public String getIdReporte() {
         return idReporte;
     }

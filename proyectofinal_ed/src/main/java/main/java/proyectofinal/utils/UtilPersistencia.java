@@ -1,14 +1,16 @@
 package main.java.proyectofinal.utils;
-/* 
+
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.logging.Level;
 
 import main.java.proyectofinal.modelo.Contenido;
+import main.java.proyectofinal.modelo.Estudiante;
 import main.java.proyectofinal.modelo.GrupoEstudio;
 import main.java.proyectofinal.modelo.SolicitudAyuda;
 import main.java.proyectofinal.modelo.Usuario;
@@ -90,6 +92,116 @@ public class UtilPersistencia {
     public void guardarUsuarioArchivo(Usuario usuario) {
         // TODO Auto-generated method stub
         throw new UnsupportedOperationException("Unimplemented method 'guardarUsuarioArchivo'");
+    }
+
+    public static UtilPersistencia getInstance() {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'getInstance'");
+    }
+
+    public Usuario buscarUsuarioPorId(String usuarioId) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'buscarUsuarioPorId'");
+    }
+
+    public void actualizarUsuario(Usuario usuario) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'actualizarUsuario'");
+    }
+
+    public void eliminarUsuario(String id) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'eliminarUsuario'");
+    }
+
+    public List<Usuario> obtenerTodosUsuarios() {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'obtenerTodosUsuarios'");
+    }
+
+    public Contenido buscarContenidoPorId(String contId) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'buscarContenidoPorId'");
+    }
+
+    public boolean eliminarContenido(String id) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'eliminarContenido'");
+    }
+
+    public boolean guardarContenido(Contenido cont) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'guardarContenido'");
+    }
+
+    public void actualizarContenido(Contenido cont) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'actualizarContenido'");
+    }
+
+    public List<Contenido> obtenerContenidosPorUsuario(String idEstudiante) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'obtenerContenidosPorUsuario'");
+    }
+
+    public void actualizarEstudiante(Estudiante estudiante) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'actualizarEstudiante'");
+    }
+
+    public void guardarSolicitud(SolicitudAyuda solicitud) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'guardarSolicitud'");
+    }
+
+    public void eliminarSolicitud(String idSolicitud) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'eliminarSolicitud'");
+    }
+
+    public void actualizarSolicitud(SolicitudAyuda solicitud) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'actualizarSolicitud'");
+    }
+
+    public List<SolicitudAyuda> obtenerTodasSolicitudes() {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'obtenerTodasSolicitudes'");
+    }
+
+    public SolicitudAyuda buscarSolicitudPorId(String id) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'buscarSolicitudPorId'");
+    }
+
+    public void guardarGrupo(GrupoEstudio grupo) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'guardarGrupo'");
+    }
+
+    public GrupoEstudio buscarGrupoPorId(String grupoId) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'buscarGrupoPorId'");
+    }
+
+    public void actualizarGrupo(GrupoEstudio grupo) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'actualizarGrupo'");
+    }
+
+    public void guardarReporte(String reporte) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'guardarReporte'");
+    }
+
+    public Collection<Usuario> obtenerTodosEstudiantes() {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'obtenerTodosEstudiantes'");
+    }
+
+    public List<GrupoEstudio> obtenerTodosGrupos() {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'obtenerTodosGrupos'");
     }
 
 }*/
