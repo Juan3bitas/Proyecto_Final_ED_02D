@@ -42,7 +42,7 @@ public class UtilLog{
         return instancia;
     }
 
-    private void escribirLog(String mensaje, Level nivel) {
+    void escribirLog(String mensaje, Level nivel) {
         logger.log(nivel, mensaje);
     }
 
