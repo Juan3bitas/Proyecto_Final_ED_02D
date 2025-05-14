@@ -6,6 +6,7 @@ import main.java.proyectofinal.utils.UtilRedSocial;
 
 import java.io.*;
 import java.net.*;
+import java.util.Base64;
 
 public class ServidorRedSocial {
     private static final int PUERTO = 12345;
@@ -80,7 +81,6 @@ public class ServidorRedSocial {
                         respuesta.addProperty("mensaje", "Error: Nombre y correo son obligatorios.");
                         return respuesta;
                     }
-
                     // ✅ Registrar el estudiante en el sistema
                     redSocial.registrarUsuario(estudiante);
                     respuesta.addProperty("exito", true);
@@ -88,23 +88,47 @@ public class ServidorRedSocial {
                     break;
 
                 case "LOGIN":
-                    // ✅ Verificar que se están obteniendo correctamente correo y contraseña
-                    if (!datos.has("correo") || !datos.has("contrasena")) {
-                        respuesta.addProperty("exito", false);
-                        respuesta.addProperty("mensaje", "Error: Falta correo o contraseña.");
-                        return respuesta;
-                    }
+                    try {
+                        // Validación básica
+                        if (!datos.has("correo") || !datos.has("contrasena")) {
+                            throw new IllegalArgumentException("Falta correo o contraseña");
+                        }
 
-                    String correo = datos.get("correo").getAsString();
-                    String contrasena = datos.get("contrasena").getAsString();
-                    Usuario usuario = redSocial.iniciarSesion(correo, contrasena);
+                        String correo = datos.get("correo").getAsString().trim();
+                        String contrasena = datos.get("contrasena").getAsString();
 
-                    if (usuario != null) {
+                        // Validaciones adicionales
+                        if (correo.isEmpty() || contrasena.isEmpty()) {
+                            throw new IllegalArgumentException("Correo y contraseña son obligatorios");
+                        }
+
+                        if (!correo.matches("^[\\w-\\.]+@([\\w-]+\\.)+[\\w-]{2,4}$")) {
+                            throw new IllegalArgumentException("Formato de correo inválido");
+                        }
+
+                        // Autenticación
+                        Usuario usuario = redSocial.iniciarSesion(correo, contrasena);
+
+                        if (usuario == null) {
+                            Thread.sleep(200); // Prevención timing attack
+                            throw new SecurityException("Credenciales inválidas");
+                        }
+
+                        // Respuesta exitosa
                         respuesta.addProperty("exito", true);
                         respuesta.add("usuario", gson.toJsonTree(usuario));
-                    } else {
+                        respuesta.addProperty("token", generarToken(usuario.getId()));
+                        respuesta.addProperty("mensaje", "Bienvenido " + usuario.getNombre());
+
+                    } catch (IllegalArgumentException e) {
                         respuesta.addProperty("exito", false);
-                        respuesta.addProperty("mensaje", "Credenciales inválidas");
+                        respuesta.addProperty("mensaje", "Error: " + e.getMessage());
+                    } catch (SecurityException e) {
+                        respuesta.addProperty("exito", false);
+                        respuesta.addProperty("mensaje", e.getMessage());
+                    } catch (Exception e) {
+                        respuesta.addProperty("exito", false);
+                        respuesta.addProperty("mensaje", "Error interno al procesar login");
                     }
                     break;
 
@@ -120,5 +144,16 @@ public class ServidorRedSocial {
         }
 
         return respuesta;
+    }
+
+    private static String generarToken(String userId) {
+        // Implementación básica de generación de token
+        // Para producción, usa una librería como JJWT
+
+        long tiempoExpiracion = System.currentTimeMillis() + 3600000; // 1 hora de validez
+        String datosToken = userId + "|" + tiempoExpiracion;
+
+        // En un entorno real, deberías usar un secreto seguro y hashing
+        return Base64.getEncoder().encodeToString(datosToken.getBytes());
     }
 }

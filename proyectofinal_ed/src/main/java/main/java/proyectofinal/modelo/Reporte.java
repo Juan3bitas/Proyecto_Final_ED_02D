@@ -7,7 +7,6 @@ import main.java.proyectofinal.utils.UtilId;
 public class Reporte {
 
     private String idReporte;
-    private TipoReporte tipo;
     private String contenido;
     private Date fechaGeneracion;
     
@@ -18,10 +17,9 @@ public class Reporte {
     }
 
     // Constructor principal
-    public Reporte(String idReporte, TipoReporte tipo, String contenido, Date fechaGeneracion) {
+    public Reporte(String idReporte, String contenido, Date fechaGeneracion) {
         this.idReporte = (idReporte == null || idReporte.isEmpty()) ? 
                          UtilId.generarIdAleatorio() : idReporte;
-        this.tipo = Objects.requireNonNull(tipo, "El tipo de reporte no puede ser nulo");
         this.contenido = Objects.requireNonNull(contenido, "El contenido no puede ser nulo");
         this.fechaGeneracion = (fechaGeneracion == null) ? new Date() : fechaGeneracion;
     }
@@ -30,13 +28,7 @@ public class Reporte {
         return idReporte;
     }
 
-    public TipoReporte getTipo() {
-        return tipo;
-    }
 
-    public void setTipo(TipoReporte tipo) {
-        this.tipo = Objects.requireNonNull(tipo);
-    }
 
     public String getContenido() {
         return contenido;
@@ -57,8 +49,8 @@ public class Reporte {
     @Override
     public String toString() {
         return String.format(
-            "Reporte [ID: %s, Tipo: %s, Fecha: %s, Contenido: %s]",
-            idReporte, tipo.name(), fechaGeneracion, contenido
+            "Reporte [ID: %s, Fecha: %s, Contenido: %s]",
+            idReporte, fechaGeneracion, contenido
         );
     }
 }

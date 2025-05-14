@@ -1,5 +1,6 @@
 package main.java.proyectofinal.modelo;
 
+import main.java.proyectofinal.excepciones.OperacionFallidaException;
 import main.java.proyectofinal.utils.UtilRedSocial;
 import java.util.List;
 import java.util.Objects;
@@ -24,9 +25,110 @@ public class RedSocial {
     public RedSocial(UtilRedSocial utilRed) {
         this.utilRed = Objects.requireNonNull(utilRed, "UtilRedSocial no puede ser nulo");
         this.usuarios = utilRed.obtenerUsuarios() != null ? utilRed.obtenerUsuarios() : new ArrayList<>();
-        this.arbolContenidos = new ArbolContenidos(CriterioOrden.TEMA); // Ordenado por tema
+        this.arbolContenidos = new ArbolContenidos(CriterioOrden.TEMA);
         this.grafoAfinidad = new GrafoAfinidad();
         this.colaSolicitudes = new PriorityQueue<>(Comparator.comparingInt(s -> s.getUrgencia().ordinal()));
+
+        // Cargar datos iniciales
+        cargarContenidosAlArbol();
+        cargarRelacionesAfinidad();
+    }
+
+    private void cargarRelacionesAfinidad() {
+        // 1. Agregar todos los estudiantes como nodos
+        usuarios.stream()
+                .filter(u -> u instanceof Estudiante)
+                .map(u -> (Estudiante) u)
+                .forEach(grafoAfinidad::agregarNodo);
+
+        // 2. Cargar relaciones desde persistencia (si existe)
+        List<GrupoEstudio> grupos = utilRed.obtenerGrupos();
+        if (grupos != null) {
+            grupos.forEach(this::agregarRelacionesDeGrupo);
+        }
+    }
+
+    private void agregarRelacionesDeGrupo(GrupoEstudio grupo) {
+        List<String> miembrosIds = grupo.getIdMiembros();
+        for (int i = 0; i < miembrosIds.size(); i++) {
+            for (int j = i + 1; j < miembrosIds.size(); j++) {
+                Usuario u1 = buscarUsuario(miembrosIds.get(i));
+                Usuario u2 = buscarUsuario(miembrosIds.get(j));
+
+                if (u1 instanceof Estudiante && u2 instanceof Estudiante) {
+                    Estudiante e1 = (Estudiante) u1;
+                    Estudiante e2 = (Estudiante) u2;
+
+                    // Incrementar peso si ya existe la relación
+                    int pesoActual = grafoAfinidad.obtenerPesoArista(e1, e2);
+                    grafoAfinidad.agregarArista(e1, e2, pesoActual + 1);
+                }
+            }
+        }
+    }
+
+    public void actualizarAfinidad(Estudiante e1, Estudiante e2, int incremento) {
+        int pesoActual = grafoAfinidad.obtenerPesoArista(e1, e2);
+        grafoAfinidad.agregarArista(e1, e2, pesoActual + incremento);
+        // Opcional: guardar en persistencia
+    }
+
+    public List<Estudiante> obtenerRecomendacionesAmplias(String idEstudiante) {
+        Usuario usuario = buscarUsuario(idEstudiante);
+        if (!(usuario instanceof Estudiante)) {
+            throw new IllegalArgumentException("El usuario no es un estudiante");
+        }
+        return grafoAfinidad.obtenerRecomendaciones((Estudiante) usuario);
+    }
+
+    private void cargarContenidosAlArbol() {
+        List<Contenido> contenidos = utilRed.obtenerContenidos();
+        if (contenidos != null) {
+            for (Contenido contenido : contenidos) {
+                arbolContenidos.insertar(contenido);
+            }
+        }
+    }
+
+    public void agregarContenido(Contenido contenido) {
+        Objects.requireNonNull(contenido, "El contenido no puede ser nulo");
+        utilRed.guardarContenido(contenido);
+        arbolContenidos.insertar(contenido);
+    }
+
+    public List<Contenido> getContenidoPorAutor(String autor) {
+        Objects.requireNonNull(autor, "El autor no puede ser nulo");
+        return arbolContenidos.buscarPorAutor(autor);
+    }
+
+    public List<Contenido> getContenidoPorTema(String tema) {
+        Objects.requireNonNull(tema, "El tema no puede ser nulo");
+        return arbolContenidos.buscarPorTema(tema);
+    }
+
+    public List<Contenido> getContenidoPorTipo(TipoContenido tipo) {
+        Objects.requireNonNull(tipo, "El tipo no puede ser nulo");
+        List<Contenido> todos = arbolContenidos.obtenerTodosEnOrden();
+        List<Contenido> filtrados = new ArrayList<>();
+
+        for (Contenido contenido : todos) {
+            if (contenido.getTipo() == tipo) {
+                filtrados.add(contenido);
+            }
+        }
+
+        return filtrados;
+    }
+
+    public void cambiarCriterioOrden(CriterioOrden nuevoCriterio) {
+        Objects.requireNonNull(nuevoCriterio, "El criterio no puede ser nulo");
+
+        List<Contenido> contenidos = arbolContenidos.obtenerTodosEnOrden();
+        this.arbolContenidos = new ArbolContenidos(nuevoCriterio);
+
+        for (Contenido contenido : contenidos) {
+            arbolContenidos.insertar(contenido);
+        }
     }
 
     public void registrarUsuario(Usuario usuario) {
@@ -49,7 +151,11 @@ public class RedSocial {
     }
 
     public List<Usuario> obtenerUsuarios() {
-        return new ArrayList<>(usuarios); // Retorna copia para evitar modificaciones externas
+        return utilRed.obtenerUsuarios(); // Retorna copia para evitar modificaciones externas
+    }
+
+    public List<Contenido> obtenerContenidos() {
+        return utilRed.obtenerContenidos(); // Retorna copia para evitar modificaciones externas
     }
 
     public void agregarSolicitud(SolicitudAyuda solicitud) {
@@ -75,13 +181,60 @@ public class RedSocial {
         if (!(usuario instanceof Estudiante)) {
             throw new IllegalArgumentException("El usuario no es un estudiante");
         }
-        Estudiante estudiante = (Estudiante) usuario;
-        return grafoAfinidad.obtenerRecomendaciones(estudiante);
+        return grafoAfinidad.obtenerRecomendaciones((Estudiante) usuario);
     }
 
-    public void formarGruposAutomaticos() {
-        List<GrupoEstudio> grupos = utilRed.formarGruposAutomaticos(usuarios);
-        actualizarGrafoAfinidad(grupos);
+    public List<GrupoEstudio> formarGruposAutomaticos() {
+        // 1. Creación básica de grupos (delegado a UtilRedSocial)
+        List<GrupoEstudio> grupos = utilRed.formarGruposAutomaticos(this.usuarios);
+
+        // 2. Persistencia
+        utilRed.guardarGrupos(grupos);
+
+        // 3. Actualización de afinidades
+        actualizarAfinidadPorGrupos(grupos);
+
+        return grupos;
+    }
+
+    private void actualizarAfinidadPorGrupos(List<GrupoEstudio> grupos) {
+        for (GrupoEstudio grupo : grupos) {
+            List<String> idsMiembros = grupo.getIdMiembros();
+
+            for (int i = 0; i < idsMiembros.size(); i++) {
+                for (int j = i + 1; j < idsMiembros.size(); j++) {
+                    actualizarRelacionAfinidad(idsMiembros.get(i), idsMiembros.get(j));
+                }
+            }
+        }
+    }
+
+    private void actualizarRelacionAfinidad(String id1, String id2) {
+        try {
+            Estudiante e1 = (Estudiante) buscarUsuario(id1);
+            Estudiante e2 = (Estudiante) buscarUsuario(id2);
+
+            if (e1 != null && e2 != null) {
+                grafoAfinidad.agregarArista(
+                        e1,
+                        e2,
+                        grafoAfinidad.obtenerPesoArista(e1, e2) + 1
+                );
+                // Opcional: Actualizar en persistencia si es necesario
+                actualizarInteresesCompartidos(e1, e2);
+            }
+        } catch (Exception e) {
+            System.err.println("Error actualizando afinidad: " + e.getMessage());
+        }
+    }
+
+    private void actualizarInteresesCompartidos(Estudiante e1, Estudiante e2) throws OperacionFallidaException {
+        // Lógica adicional si necesitas registrar intereses compartidos
+        String interesGrupo = "Colaboración en Grupo";
+        e1.agregarInteres(interesGrupo);
+        e2.agregarInteres(interesGrupo);
+        utilRed.actualizarEstudiante(e1);
+        utilRed.actualizarEstudiante(e2);
     }
 
     private Usuario buscarUsuario(String idUsuario) {

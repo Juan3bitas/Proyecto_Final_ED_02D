@@ -78,8 +78,7 @@ public class UtilEstudiante {
         // 2. Persistir cambios del estudiante
         utilRedSocial.actualizarEstudiante(estudiante);
         
-        // 3. Actualizar grafo de afinidad
-        utilRedSocial.actualizarGrafoAfinidad(estudiante.getId(), interes);
+
     }
 
     public void agregarValoracion(String idEstudiante, String idContenido, int puntuacion, String comentario) 

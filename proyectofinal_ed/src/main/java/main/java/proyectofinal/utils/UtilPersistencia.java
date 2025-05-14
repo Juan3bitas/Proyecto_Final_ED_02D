@@ -22,6 +22,7 @@ public class UtilPersistencia {
     private UtilPersistencia() {
         this.utilProperties = UtilProperties.getInstance();
         this.utilLog = UtilLog.getInstance();
+        //inicializarDatos();
         utilLog.escribirLog("✅ UtilPersistencia instanciada.", Level.INFO);
     }
 
@@ -30,6 +31,7 @@ public class UtilPersistencia {
     public static synchronized UtilPersistencia getInstance() {
         if (instancia == null) {
             instancia = new UtilPersistencia();
+            instancia.inicializarDatos();
         }
         return instancia;
     }
@@ -137,6 +139,42 @@ public class UtilPersistencia {
         } catch (Exception e) {
             utilLog.escribirLog("Error buscando contenido: " + e.getMessage(), Level.SEVERE);
             return null;
+        }
+    }
+
+    public List<Contenido> buscarContenidoPorAutor(String autorId) {
+        try {
+            utilLog.escribirLog("Buscando contenido por autor: " + autorId, Level.INFO);
+            return listaContenidosCache.stream()
+                    .filter(c -> c.getAutor().equals(autorId))
+                    .collect(Collectors.toList());
+        } catch (Exception e) {
+            utilLog.escribirLog("Error buscando contenido: " + e.getMessage(), Level.SEVERE);
+            return Collections.emptyList();
+        }
+    }
+
+    public List<Contenido> buscarContenidoPorTema(String tema) {
+        try {
+            utilLog.escribirLog("Buscando contenido por tema: " + tema, Level.INFO);
+            return listaContenidosCache.stream()
+                    .filter(c -> c.getTema().equals(tema))
+                    .collect(Collectors.toList());
+        } catch (Exception e) {
+            utilLog.escribirLog("Error buscando contenido: " + e.getMessage(), Level.SEVERE);
+            return Collections.emptyList();
+        }
+    }
+
+    public List<Contenido> buscarContenidoPorTipo(TipoContenido tipo) {
+        try {
+            utilLog.escribirLog("Buscando contenido por tipo: " + tipo, Level.INFO);
+            return listaContenidosCache.stream()
+                    .filter(c -> c.getTipo().equals(tipo))
+                    .collect(Collectors.toList());
+        } catch (Exception e) {
+            utilLog.escribirLog("Error buscando contenido: " + e.getMessage(), Level.SEVERE);
+            return Collections.emptyList();
         }
     }
 
@@ -278,13 +316,21 @@ public class UtilPersistencia {
     }
 
     // ==================== MÉTODOS DE REPORTES ====================
-    public void guardarReporte(Reporte reporte) {
+    public void guardarReporte(String contenidoReporte) {
         try {
-            utilLog.escribirLog("Guardando reporte: " + reporte.getIdReporte(), Level.INFO);
-            listaReportesCache.add(reporte);
+            // Crear nuevo reporte a partir del String
+            Reporte nuevoReporte = new Reporte(
+                    null,                // ID se generará automáticamente
+                    contenidoReporte,    // Contenido del reporte
+                    new Date()          // Fecha actual
+            );
+
+            utilLog.escribirLog("Guardando reporte: " + nuevoReporte.getIdReporte(), Level.INFO);
+            listaReportesCache.add(nuevoReporte);
             guardarTodosReportes();
         } catch (Exception e) {
             utilLog.escribirLog("Error guardando reporte: " + e.getMessage(), Level.SEVERE);
+            throw new RuntimeException("Error al transformar y guardar reporte", e);
         }
     }
 
@@ -370,23 +416,30 @@ public class UtilPersistencia {
     }
 
     private String usuarioToCsv(Usuario usuario) {
+        // Procesar campos básicos
+        System.out.println(usuario.getContrasenia());
+        String contrasenia = (usuario.getContrasenia() == null || usuario.getContrasenia().isEmpty())
+                ? "SIN_CONTRASEÑA"
+                : escapeCsv(usuario.getContrasenia());
+
         String[] campos = {
                 usuario.getId() != null ? usuario.getId() : "NULL_ID",
                 usuario.getNombre() != null ? escapeCsv(usuario.getNombre()) : "",
                 usuario.getCorreo() != null ? escapeCsv(usuario.getCorreo()) : "",
-                usuario.getContrasenia() != null && !usuario.getContrasenia().isEmpty() ? usuario.getContrasenia() : "SIN_CONTRASEÑA",
+                contrasenia,
                 String.valueOf(usuario.isSuspendido()),
                 String.valueOf(usuario.getDiasSuspension()),
                 usuario.getClass().getSimpleName()
         };
 
+        // Procesar campos específicos de Estudiante
         String intereses = "";
         String contenidos = "";
 
         if (usuario instanceof Estudiante) {
             Estudiante est = (Estudiante) usuario;
-            intereses = est.getIntereses() != null ? String.join(";", est.getIntereses()) : "";
-            contenidos = est.getIdsContenidosPublicados() != null ? String.join(";", est.getIdsContenidosPublicados()) : "";
+            intereses = est.getIntereses() != null ? escapeCsv(String.join(";", est.getIntereses())) : "";
+            contenidos = est.getIdsContenidosPublicados() != null ? escapeCsv(String.join(";", est.getIdsContenidosPublicados())) : "";
         }
 
         return String.join(",", campos) + "," + intereses + "," + contenidos;
@@ -394,8 +447,23 @@ public class UtilPersistencia {
 
 
 
-    private String escapeCsv(String value) {
-        return value == null ? "" : value.replace(",", "\\,");
+    // Métodos auxiliares para manejar CSV
+    private String escapeCsv(String input) {
+        if (input == null) return "";
+        // Si contiene comas o saltos de línea, envolver en comillas
+        if (input.contains(",") || input.contains("\n") || input.contains("\"")) {
+            return "\"" + input.replace("\"", "\"\"") + "\"";
+        }
+        return input;
+    }
+
+    private String unescapeCsv(String input) {
+        if (input == null || input.isEmpty()) return "";
+        // Quitar comillas exteriores si existen
+        if (input.startsWith("\"") && input.endsWith("\"")) {
+            input = input.substring(1, input.length() - 1);
+        }
+        return input.replace("\"\"", "\"");
     }
 
     private String contenidoToCsv(Contenido contenido) {
@@ -449,7 +517,6 @@ public class UtilPersistencia {
     private String reporteToCsv(Reporte reporte) {
         return String.join("~",
                 reporte.getIdReporte(),
-                reporte.getTipo().name(),
                 reporte.getContenido(),
                 String.valueOf(reporte.getFechaGeneracion().getTime())
         );
@@ -472,14 +539,19 @@ public class UtilPersistencia {
         } catch (IOException e) {
             utilLog.escribirLog("Error cargando usuarios: " + e.getMessage(), Level.SEVERE);
         }
+        for (Usuario usuario : listaUsuariosCache) {
+            if (usuario instanceof Estudiante) {
+                Estudiante estudiante = (Estudiante) usuario;
+                estudiante.setUtilEstudiante(UtilEstudiante.getInstance());
+            }
+        }
     }
 
     private Usuario parsearUsuario(String csv) {
         String[] partes = csv.split(",");
         if (partes.length < 7) return null;
 
-        // ✅ Asegurar que nunca sea null
-        String contrasena = (partes[3].equals("SIN_CONTRASEÑA") || partes[3].isEmpty()) ? "REVISAR_CONTRASEÑA" : partes[3];
+        String contrasena = partes[3];
 
         Usuario usuario;
         if (partes[6].equals("Estudiante")) {
@@ -655,14 +727,13 @@ public class UtilPersistencia {
 
     private Reporte parsearReporte(String csv) {
         String[] partes = csv.split("~");
-        if (partes.length < 4) return null;
+        if (partes.length < 3) return null;
 
         String idReporte = partes[0];
-        TipoReporte tipo = TipoReporte.valueOf(partes[1]);
-        String contenido = partes[2];
-        Date fechaGeneracion = new Date(Long.parseLong(partes[3]));
+        String contenido = partes[1];
+        Date fechaGeneracion = new Date(Long.parseLong(partes[2]));
 
-        return new Reporte(idReporte, tipo, contenido, fechaGeneracion);
+        return new Reporte(idReporte, contenido, fechaGeneracion);
     }
 
     public void actualizarEstudiante(Estudiante estudiante) {
@@ -679,6 +750,21 @@ public class UtilPersistencia {
         } catch (Exception e) {
             utilLog.escribirLog("Error actualizando estudiante: " + e.getMessage(), Level.SEVERE);
             throw new RuntimeException("Error al actualizar estudiante", e);
+        }
+    }
+
+    public List<Contenido> obtenerTodosContenidos() {
+        utilLog.escribirLog("Obteniendo todos los contenidos", Level.INFO);
+        return new ArrayList<>(listaContenidosCache);
+    }
+
+    public void guardarGrupos(List<GrupoEstudio> grupos) {
+        try {
+            utilLog.escribirLog("Guardando grupos", Level.INFO);
+            listaGruposCache = new ArrayList<>(grupos);
+            guardarTodosGrupos();
+        } catch (IOException e) {
+            utilLog.escribirLog("Error guardando grupos: " + e.getMessage(), Level.SEVERE);
         }
     }
 

@@ -163,39 +163,53 @@ public class UtilRedSocial {
     }
 
     // ==================== GRUPOS ====================
-    public List<GrupoEstudio> formarGruposAutomaticos(List<Usuario> usuarios) {
-        List<Estudiante> estudiantes = new ArrayList<>();
-        for (Usuario u : usuarios) {
-            if (u instanceof Estudiante) {
-                estudiantes.add((Estudiante) u);
-            }
-        }
-        
-        List<GrupoEstudio> grupos = new ArrayList<>();
-        int tamanoGrupo = 5;
-        
-        for (int i = 0; i < estudiantes.size(); i += tamanoGrupo) {
-            List<Estudiante> subgrupo = estudiantes.subList(i, Math.min(i + tamanoGrupo, estudiantes.size()));
-            
-            // Corrección aquí: Usar LinkedList para idMiembros como espera el constructor
-            LinkedList<String> idMiembros = subgrupo.stream()
-                .map(Estudiante::getId)
-                .collect(Collectors.toCollection(LinkedList::new));
-            
-            GrupoEstudio grupo = new GrupoEstudio(
+
+    private GrupoEstudio crearNuevoGrupo(List<Estudiante> miembros, int numeroGrupo) {
+        return new GrupoEstudio(
                 "GRP-" + UUID.randomUUID().toString().substring(0, 8),
-                "Grupo " + (grupos.size() + 1),
+                "Grupo " + numeroGrupo,
                 "Grupo autoformado",
-                idMiembros,  // Usamos LinkedList como espera el constructor
-                new LinkedList<>(),  // idContenidos vacío
+                new LinkedList<>(miembros.stream()
+                        .map(Estudiante::getId)
+                        .collect(Collectors.toList())),
+                new LinkedList<>(),
                 new Date()
+        );
+    }
+
+    public List<GrupoEstudio> formarGruposAutomaticos(List<Usuario> usuarios) {
+        // 1. Filtrar estudiantes y mezclar
+        List<Estudiante> estudiantes = usuarios.stream()
+                .filter(u -> u instanceof Estudiante)
+                .map(u -> (Estudiante) u)
+                .collect(Collectors.toList());
+        Collections.shuffle(estudiantes);
+
+        // 2. Crear grupos
+        final int TAMAÑO_GRUPO = 5;
+        List<GrupoEstudio> grupos = new ArrayList<>();
+
+        for (int i = 0; i < estudiantes.size(); i += TAMAÑO_GRUPO) {
+            List<Estudiante> miembros = estudiantes.subList(
+                    i,
+                    Math.min(i + TAMAÑO_GRUPO, estudiantes.size())
             );
-            
-            utilPersistencia.guardarGrupo(grupo);
-            grupos.add(grupo);
+
+            grupos.add(new GrupoEstudio(
+                    "GRP-" + UUID.randomUUID().toString().substring(0, 8),
+                    "Grupo " + (grupos.size() + 1),
+                    "Grupo autoformado",
+                    new LinkedList<>(miembros.stream()
+                            .map(Estudiante::getId)
+                            .collect(Collectors.toList())),
+                    new LinkedList<>(),
+                    new Date()
+            ));
         }
+
         return grupos;
     }
+
 
     public boolean agregarMiembroAGrupo(String grupoId, String estudianteId) throws OperacionFallidaException {
         GrupoEstudio grupo = utilPersistencia.buscarGrupoPorId(grupoId);
@@ -237,14 +251,8 @@ public class UtilRedSocial {
         return false;
     }
 
-    // ==================== GRAFO AFINIDAD ====================
-    public void actualizarGrafoAfinidad(String idUsuario, String interes) throws OperacionFallidaException {
-        Estudiante estudiante = (Estudiante) this.buscarUsuario(idUsuario);
-        if (estudiante != null) {
-            estudiante.agregarInteres(interes);
-            utilPersistencia.actualizarEstudiante(estudiante);
-        }
-    }
+
+
 
     // ==================== VALORACIONES ====================
     public List<GrupoEstudio> generarRecomendaciones(String idUsuario) {
@@ -381,20 +389,88 @@ public class UtilRedSocial {
     }
 
     public void guardarReporte(String reporte) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'guardarReporte'");
+        try {
+            Objects.requireNonNull(reporte, "El reporte no puede ser nulo");
+            utilPersistencia.guardarReporte(reporte);
+            utilLog.logInfo("Reporte guardado: " + reporte);
+        } catch (Exception e) {
+            utilLog.logSevere("Error guardando reporte: " + e.getMessage());
+        }
     }
 
     public void actualizarEstudiante(Estudiante estudiante) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'actualizarEstudiante'");
+        if (estudiante == null) {
+            throw new IllegalArgumentException("El estudiante no puede ser nulo");
+        }
+        utilPersistencia.actualizarEstudiante(estudiante);
+        utilLog.logInfo("Estudiante actualizado: " + estudiante.getId());
     }
 
-    public void agregarValoracionAContenido(String idContenido, String idEstudiante, int puntuacion,
-            String comentario) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'agregarValoracionAContenido'");
+    public void agregarValoracionAContenido(String idContenido, String idEstudiante, int puntuacion, String comentario) {
+        // Validaciones mejoradas
+        Objects.requireNonNull(idContenido, "El ID del contenido no puede ser nulo");
+        Objects.requireNonNull(idEstudiante, "El ID del estudiante no puede ser nulo");
+
+        if (puntuacion < 1 || puntuacion > 5) {
+            throw new IllegalArgumentException("La puntuación debe estar entre 1 y 5");
+        }
+
+        // Buscar contenido con manejo de excepciones
+        try {
+            Contenido contenido = this.buscarContenido(idContenido);
+            if (contenido == null) {
+                utilLog.logWarning("Contenido no encontrado para agregar valoración: " + idContenido);
+                return;
+            }
+
+            // Crear valoración con fecha actual
+            Valoracion valoracion = new Valoracion(
+                    null,                       // ID se generará automáticamente
+                    contenido.getTema(),        // Tema del contenido
+                    contenido.getDescripcion(), // Descripción del contenido
+                    idEstudiante,              // Autor de la valoración
+                    puntuacion,                 // Puntuación
+                    new Date(),                 // Fecha actual
+                    comentario                  // Comentario
+            );
+
+            // Agregar y actualizar
+            contenido.agregarValoracion(valoracion);
+            this.actualizarContenido(contenido);
+
+
+
+        } catch (Exception e) {
+            utilLog.logSevere("Error al agregar valoración: " + e.getMessage());
+            throw new RuntimeException("Error al agregar valoración", e);
+        }
+    }
+
+    public List<Contenido> obtenerContenidosPorAutor(String idEstudiante) {
+        return utilPersistencia.buscarContenidoPorAutor(idEstudiante);
+    }
+
+    public List<Contenido> obtenerContenidosPorTema(String tema) {
+        return utilPersistencia.buscarContenidoPorTema(tema);
+    }
+
+    public List<Contenido> obtenerContenidosPorTipo(TipoContenido tipo) {
+        return utilPersistencia.buscarContenidoPorTipo(tipo);
     }
 
 
+    public List<Contenido> obtenerContenidos() {
+        return utilPersistencia.obtenerTodosContenidos();
+    }
+
+    public List<GrupoEstudio> obtenerGrupos() {
+        return utilPersistencia.obtenerTodosGrupos();
+    }
+
+    public void guardarGrupos(List<GrupoEstudio> grupos) {
+        for (GrupoEstudio grupo : grupos) {
+            utilPersistencia.guardarGrupo(grupo);
+        }
+        utilLog.logInfo("Grupos guardados en la persistencia");
+    }
 }

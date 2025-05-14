@@ -17,7 +17,7 @@ public abstract class Usuario {
 
     @SerializedName("correo")
     private String correo;
-
+    @SerializedName("contrasena")
     private String contrasenia;
     private boolean suspendido;
     private int diasSuspension;
