@@ -20,7 +20,7 @@ public class GrupoEstudio {
     private LinkedList<String> idMiembros;
     private LinkedList<String> idContenidos;
     private Date fechaCreacion;
-    private UtilGrupoEstudio utilGrupoEstudio;
+    private transient UtilGrupoEstudio utilGrupoEstudio;
 
     public GrupoEstudio(String id, String nombre, String descripcion, LinkedList<String> idMiembros, 
                 LinkedList<String> idContenidos, Date fechaCreacion) {

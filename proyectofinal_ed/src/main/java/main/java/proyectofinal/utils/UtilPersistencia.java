@@ -15,12 +15,17 @@ public class UtilPersistencia {
     private List<Contenido> listaContenidosCache = new ArrayList<>();
     private List<SolicitudAyuda> listaSolicitudesCache = new ArrayList<>();
     private List<GrupoEstudio> listaGruposCache = new ArrayList<>();
+    private List<Reporte> listaReportesCache = new ArrayList<>();
 
+
+    // ✅ Constructor sin carga automática de datos
     private UtilPersistencia() {
         this.utilProperties = UtilProperties.getInstance();
         this.utilLog = UtilLog.getInstance();
-        cargarDatosIniciales();
+        utilLog.escribirLog("✅ UtilPersistencia instanciada.", Level.INFO);
     }
+
+
 
     public static synchronized UtilPersistencia getInstance() {
         if (instancia == null) {
@@ -29,16 +34,20 @@ public class UtilPersistencia {
         return instancia;
     }
 
-    private void cargarDatosIniciales() {
+    public void inicializarDatos() {
         cargarUsuarios();
         cargarContenidos();
         cargarSolicitudes();
         cargarGrupos();
+        cargarReportes();
+        utilLog.escribirLog("✅ Datos iniciales cargados correctamente.", Level.INFO);
     }
 
+
     // ==================== MÉTODOS DE USUARIO ====================
-    public Object buscarUsuarioCorreo(String correo) {
+    public Usuario buscarUsuarioCorreo(String correo) {
         try {
+            utilLog.escribirLog("Buscando usuario por correo: " + correo, Level.INFO);
             return listaUsuariosCache.stream()
                     .filter(u -> u.getCorreo().equalsIgnoreCase(correo))
                     .findFirst()
@@ -49,17 +58,30 @@ public class UtilPersistencia {
         }
     }
 
+
     public void guardarUsuarioArchivo(Usuario usuario) {
         try {
+            Objects.requireNonNull(usuario, "El usuario no puede ser nulo");
+            utilLog.escribirLog("Intentando guardar usuario: " + usuario.getNombre(), Level.INFO);
+
+            // Validar campos obligatorios
+            if(usuario.getId() == null || usuario.getId().isEmpty()) {
+                usuario.setId(UtilId.generarIdAleatorio());
+            }
+
             listaUsuariosCache.add(usuario);
-            guardarUsuarioEnArchivo(usuario);
+            guardarTodosUsuarios();
+
+            utilLog.escribirLog("Usuario guardado exitosamente: " + usuario.getId(), Level.INFO);
         } catch (Exception e) {
-            utilLog.escribirLog("Error guardando usuario: " + e.getMessage(), Level.SEVERE);
+            utilLog.escribirLog("Error crítico guardando usuario: " + e.getMessage(), Level.SEVERE);
+            throw new PersistenciaException("Error al guardar usuario", e);
         }
     }
 
     public Usuario buscarUsuarioPorId(String usuarioId) {
         try {
+            utilLog.escribirLog("Buscando usuario por ID: " + usuarioId, Level.INFO);
             return listaUsuariosCache.stream()
                     .filter(u -> u.getId().equals(usuarioId))
                     .findFirst()
@@ -72,6 +94,7 @@ public class UtilPersistencia {
 
     public void actualizarUsuario(Usuario usuario) {
         try {
+            utilLog.escribirLog("Actualizando usuario: " + usuario.getNombre(), Level.INFO);
             listaUsuariosCache.removeIf(u -> u.getId().equals(usuario.getId()));
             listaUsuariosCache.add(usuario);
             guardarTodosUsuarios();
@@ -82,6 +105,7 @@ public class UtilPersistencia {
 
     public void eliminarUsuario(String id) {
         try {
+            utilLog.escribirLog("Eliminando usuario: " + id, Level.INFO);
             listaUsuariosCache.removeIf(u -> u.getId().equals(id));
             guardarTodosUsuarios();
         } catch (Exception e) {
@@ -90,18 +114,22 @@ public class UtilPersistencia {
     }
 
     public List<Usuario> obtenerTodosUsuarios() {
+        utilLog.escribirLog("Obteniendo todos los usuarios", Level.INFO);
         return new ArrayList<>(listaUsuariosCache);
     }
 
-    public Collection<Usuario> obtenerTodosEstudiantes() {
+    public List<Estudiante> obtenerTodosEstudiantes() {
+        utilLog.escribirLog("Obteniendo todos los estudiantes", Level.INFO);
         return listaUsuariosCache.stream()
                 .filter(u -> u instanceof Estudiante)
+                .map(u -> (Estudiante) u)
                 .collect(Collectors.toList());
     }
 
     // ==================== MÉTODOS DE CONTENIDO ====================
     public Contenido buscarContenidoPorId(String contId) {
         try {
+            utilLog.escribirLog("Buscando contenido por ID: " + contId, Level.INFO);
             return listaContenidosCache.stream()
                     .filter(c -> c.getId().equals(contId))
                     .findFirst()
@@ -114,6 +142,7 @@ public class UtilPersistencia {
 
     public boolean eliminarContenido(String id) {
         try {
+            utilLog.escribirLog("Eliminando contenido: " + id, Level.INFO);
             boolean removed = listaContenidosCache.removeIf(c -> c.getId().equals(id));
             guardarTodosContenidos();
             return removed;
@@ -125,8 +154,9 @@ public class UtilPersistencia {
 
     public boolean guardarContenido(Contenido cont) {
         try {
+            utilLog.escribirLog("Guardando contenido: " + cont.getTitulo(), Level.INFO);
             listaContenidosCache.add(cont);
-            guardarContenidoEnArchivo(cont);
+            guardarTodosContenidos();
             return true;
         } catch (Exception e) {
             utilLog.escribirLog("Error guardando contenido: " + e.getMessage(), Level.SEVERE);
@@ -136,6 +166,7 @@ public class UtilPersistencia {
 
     public void actualizarContenido(Contenido cont) {
         try {
+            utilLog.escribirLog("Actualizando contenido: " + cont.getTitulo(), Level.INFO);
             listaContenidosCache.removeIf(c -> c.getId().equals(cont.getId()));
             listaContenidosCache.add(cont);
             guardarTodosContenidos();
@@ -146,6 +177,7 @@ public class UtilPersistencia {
 
     public List<Contenido> obtenerContenidosPorUsuario(String idEstudiante) {
         try {
+            utilLog.escribirLog("Obteniendo contenidos por usuario: " + idEstudiante, Level.INFO);
             return listaContenidosCache.stream()
                     .filter(c -> c.getAutor().equals(idEstudiante))
                     .collect(Collectors.toList());
@@ -155,15 +187,12 @@ public class UtilPersistencia {
         }
     }
 
-    public void actualizarEstudiante(Estudiante estudiante) {
-        actualizarUsuario(estudiante);
-    }
-
     // ==================== MÉTODOS DE SOLICITUDES ====================
     public void guardarSolicitud(SolicitudAyuda solicitud) {
         try {
+            utilLog.escribirLog("Guardando solicitud: " + solicitud.getTema(), Level.INFO);
             listaSolicitudesCache.add(solicitud);
-            guardarSolicitudEnArchivo(solicitud);
+            guardarTodasSolicitudes();
         } catch (Exception e) {
             utilLog.escribirLog("Error guardando solicitud: " + e.getMessage(), Level.SEVERE);
         }
@@ -171,6 +200,7 @@ public class UtilPersistencia {
 
     public void eliminarSolicitud(String idSolicitud) {
         try {
+            utilLog.escribirLog("Eliminando solicitud: " + idSolicitud, Level.INFO);
             listaSolicitudesCache.removeIf(s -> s.getId().equals(idSolicitud));
             guardarTodasSolicitudes();
         } catch (Exception e) {
@@ -180,6 +210,7 @@ public class UtilPersistencia {
 
     public void actualizarSolicitud(SolicitudAyuda solicitud) {
         try {
+            utilLog.escribirLog("Actualizando solicitud: " + solicitud.getTema(), Level.INFO);
             listaSolicitudesCache.removeIf(s -> s.getId().equals(solicitud.getId()));
             listaSolicitudesCache.add(solicitud);
             guardarTodasSolicitudes();
@@ -189,11 +220,13 @@ public class UtilPersistencia {
     }
 
     public List<SolicitudAyuda> obtenerTodasSolicitudes() {
+        utilLog.escribirLog("Obteniendo todas las solicitudes", Level.INFO);
         return new ArrayList<>(listaSolicitudesCache);
     }
 
     public SolicitudAyuda buscarSolicitudPorId(String id) {
         try {
+            utilLog.escribirLog("Buscando solicitud por ID: " + id, Level.INFO);
             return listaSolicitudesCache.stream()
                     .filter(s -> s.getId().equals(id))
                     .findFirst()
@@ -207,8 +240,9 @@ public class UtilPersistencia {
     // ==================== MÉTODOS DE GRUPOS ====================
     public void guardarGrupo(GrupoEstudio grupo) {
         try {
+            utilLog.escribirLog("Guardando grupo: " + grupo.getNombre(), Level.INFO);
             listaGruposCache.add(grupo);
-            guardarGrupoEnArchivo(grupo);
+            guardarTodosGrupos();
         } catch (Exception e) {
             utilLog.escribirLog("Error guardando grupo: " + e.getMessage(), Level.SEVERE);
         }
@@ -216,6 +250,7 @@ public class UtilPersistencia {
 
     public GrupoEstudio buscarGrupoPorId(String grupoId) {
         try {
+            utilLog.escribirLog("Buscando grupo por ID: " + grupoId, Level.INFO);
             return listaGruposCache.stream()
                     .filter(g -> g.getIdGrupo().equals(grupoId))
                     .findFirst()
@@ -228,6 +263,7 @@ public class UtilPersistencia {
 
     public void actualizarGrupo(GrupoEstudio grupo) {
         try {
+            utilLog.escribirLog("Actualizando grupo: " + grupo.getNombre(), Level.INFO);
             listaGruposCache.removeIf(g -> g.getIdGrupo().equals(grupo.getIdGrupo()));
             listaGruposCache.add(grupo);
             guardarTodosGrupos();
@@ -237,259 +273,418 @@ public class UtilPersistencia {
     }
 
     public List<GrupoEstudio> obtenerTodosGrupos() {
+        utilLog.escribirLog("Obteniendo todos los grupos", Level.INFO);
         return new ArrayList<>(listaGruposCache);
     }
 
     // ==================== MÉTODOS DE REPORTES ====================
-    public void guardarReporte(String reporte) {
-        String ruta = utilProperties.obtenerPropiedad("rutaReportes.txt");
-        try (BufferedWriter writer = new BufferedWriter(new FileWriter(ruta, true))) {
-            writer.write(reporte);
-            writer.newLine();
-        } catch (IOException e) {
+    public void guardarReporte(Reporte reporte) {
+        try {
+            utilLog.escribirLog("Guardando reporte: " + reporte.getIdReporte(), Level.INFO);
+            listaReportesCache.add(reporte);
+            guardarTodosReportes();
+        } catch (Exception e) {
             utilLog.escribirLog("Error guardando reporte: " + e.getMessage(), Level.SEVERE);
         }
     }
 
-    // ==================== MÉTODOS PRIVADOS ====================
+    public List<Reporte> obtenerTodosReportes() {
+        utilLog.escribirLog("Obteniendo todos los reportes", Level.INFO);
+        return new ArrayList<>(listaReportesCache);
+    }
 
+    // MÉTODO UTIL PARA FORZAR GUARDADO COMPLETO
+    public void gestionarArchivos(List<Usuario> listaUsuarios, List<SolicitudAyuda> listaSolicitudes,
+                                  List<Contenido> listaContenidos, List<GrupoEstudio> listaGruposEstudio,
+                                  List<Reporte> listaReportes) throws IOException {
+        utilLog.escribirLog("Gestionando archivos de persistencia", Level.INFO);
+        if (listaUsuarios != null) this.listaUsuariosCache = new ArrayList<>(listaUsuarios);
+        if (listaSolicitudes != null) this.listaSolicitudesCache = new ArrayList<>(listaSolicitudes);
+        if (listaContenidos != null) this.listaContenidosCache = new ArrayList<>(listaContenidos);
+        if (listaGruposEstudio != null) this.listaGruposCache = new ArrayList<>(listaGruposEstudio);
+        if (listaReportes != null) this.listaReportesCache = new ArrayList<>(listaReportes);
 
-    private void guardarUsuarioEnArchivo(Usuario usuario) throws IOException {
+        guardarTodosUsuarios();
+        guardarTodasSolicitudes();
+        guardarTodosContenidos();
+        guardarTodosGrupos();
+        guardarTodosReportes();
+    }
+
+    // MÉTODOS DE GUARDADO COMPLETO INDIVIDUAL
+    private void guardarTodosUsuarios() throws IOException {
         String ruta = utilProperties.obtenerPropiedad("rutaUsuarios.txt");
-        try (BufferedWriter writer = new BufferedWriter(new FileWriter(ruta, true))) {
-            writer.write(usuarioToCsv(usuario));
-            writer.newLine();
+        utilLog.escribirLog("Guardando usuarios en: " + ruta, Level.FINE);
+
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(ruta))) {
+            for (Usuario usuario : listaUsuariosCache) {
+                String linea = usuarioToCsv(usuario);
+                writer.write(linea);
+                writer.newLine();
+            }
+        } catch (IOException e) {
+            utilLog.escribirLog("Error escribiendo archivo de usuarios: " + e.getMessage(), Level.SEVERE);
+            throw e;
         }
     }
 
-    private void guardarTodosUsuarios() throws IOException {
-        String ruta = utilProperties.obtenerPropiedad("rutaUsuarios.txt");
+
+    private void guardarTodosContenidos() throws IOException {
+        String ruta = utilProperties.obtenerPropiedad("rutaContenidos.txt");
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(ruta))) {
-            for (Usuario usuario : listaUsuariosCache) {
-                writer.write(usuarioToCsv(usuario));
+            for (Contenido contenido : listaContenidosCache) {
+                writer.write(contenidoToCsv(contenido));
+                writer.newLine();
+            }
+        }
+    }
+
+    private void guardarTodasSolicitudes() throws IOException {
+        String ruta = utilProperties.obtenerPropiedad("rutaSolicitudes.txt");
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(ruta))) {
+            for (SolicitudAyuda solicitud : listaSolicitudesCache) {
+                writer.write(solicitudToCsv(solicitud));
+                writer.newLine();
+            }
+        }
+    }
+
+    private void guardarTodosGrupos() throws IOException {
+        String ruta = utilProperties.obtenerPropiedad("rutaGruposEstudio.txt");
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(ruta))) {
+            for (GrupoEstudio grupo : listaGruposCache) {
+                writer.write(grupoToCsv(grupo));
+                writer.newLine();
+            }
+        }
+    }
+
+    private void guardarTodosReportes() throws IOException {
+        String ruta = utilProperties.obtenerPropiedad("rutaReportes.txt");
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(ruta))) {
+            for (Reporte reporte : listaReportesCache) {
+                writer.write(reporteToCsv(reporte));
                 writer.newLine();
             }
         }
     }
 
     private String usuarioToCsv(Usuario usuario) {
-        return String.join(",",
-            usuario.getId(),
-            usuario.getNombre(),
-            usuario.getCorreo(),
-            usuario.getContrasenia(),
-            String.valueOf(usuario.isSuspendido()),
-            String.valueOf(usuario.getDiasSuspension())
+        String[] campos = {
+                usuario.getId() != null ? usuario.getId() : "NULL_ID",
+                usuario.getNombre() != null ? escapeCsv(usuario.getNombre()) : "",
+                usuario.getCorreo() != null ? escapeCsv(usuario.getCorreo()) : "",
+                usuario.getContrasenia() != null && !usuario.getContrasenia().isEmpty() ? usuario.getContrasenia() : "SIN_CONTRASEÑA",
+                String.valueOf(usuario.isSuspendido()),
+                String.valueOf(usuario.getDiasSuspension()),
+                usuario.getClass().getSimpleName()
+        };
+
+        String intereses = "";
+        String contenidos = "";
+
+        if (usuario instanceof Estudiante) {
+            Estudiante est = (Estudiante) usuario;
+            intereses = est.getIntereses() != null ? String.join(";", est.getIntereses()) : "";
+            contenidos = est.getIdsContenidosPublicados() != null ? String.join(";", est.getIdsContenidosPublicados()) : "";
+        }
+
+        return String.join(",", campos) + "," + intereses + "," + contenidos;
+    }
+
+
+
+    private String escapeCsv(String value) {
+        return value == null ? "" : value.replace(",", "\\,");
+    }
+
+    private String contenidoToCsv(Contenido contenido) {
+        String valoracionesStr = contenido.getValoraciones().stream()
+                .map(v -> String.join("~",
+                        v.getIdValoracion(),
+                        v.getTema(),
+                        v.getDescripcion(),
+                        v.getIdAutor(),
+                        String.valueOf(v.getValor()),
+                        v.getFecha() != null ? String.valueOf(v.getFecha().getTime()) : "",
+                        v.getComentario()
+                ))
+                .collect(Collectors.joining("|"));
+
+        return String.join("§",
+                contenido.getId(),
+                contenido.getTitulo(),
+                contenido.getAutor(),
+                contenido.getFecha().toString(),
+                contenido.getTipo().name(),
+                contenido.getDescripcion(),
+                contenido.getTema(),
+                valoracionesStr
         );
     }
 
-    public void gestionarArchivos(List<Usuario> listaUsuarios, List<SolicitudAyuda> listaSolicitudes,
-            List<Contenido> listaContenidos, List<GrupoEstudio> listaGruposEstudio) throws IOException {
-        if (listaUsuarios != null) this.listaUsuariosCache = new ArrayList<>(listaUsuarios);
-        if (listaSolicitudes != null) this.listaSolicitudesCache = new ArrayList<>(listaSolicitudes);
-        if (listaContenidos != null) this.listaContenidosCache = new ArrayList<>(listaContenidos);
-        if (listaGruposEstudio != null) this.listaGruposCache = new ArrayList<>(listaGruposEstudio);
-
-        guardarTodosUsuarios();
-        guardarTodasSolicitudes();
-        guardarTodosContenidos();
-        guardarTodosGrupos();
+    private String solicitudToCsv(SolicitudAyuda solicitud) {
+        return String.join(";",
+                solicitud.getId(),
+                solicitud.getTema(),
+                solicitud.getDescripcion(),
+                String.valueOf(solicitud.getFecha().getTime()),
+                solicitud.getUrgencia().name(),
+                solicitud.getSolicitanteId(),
+                solicitud.getEstado().name()
+        );
     }
 
-    //////////////
+    private String grupoToCsv(GrupoEstudio grupo) {
+        return String.join("#",
+                grupo.getIdGrupo(),
+                grupo.getNombre(),
+                grupo.getDescripcion(),
+                String.join(",", grupo.getIdMiembros()),
+                String.join(",", grupo.getIdContenidos()),
+                String.valueOf(grupo.getFechaCreacion().getTime())
+        );
+    }
+
+    private String reporteToCsv(Reporte reporte) {
+        return String.join("~",
+                reporte.getIdReporte(),
+                reporte.getTipo().name(),
+                reporte.getContenido(),
+                String.valueOf(reporte.getFechaGeneracion().getTime())
+        );
+    }
+
+    // Métodos de carga de datos
     private void cargarUsuarios() {
         String ruta = utilProperties.obtenerPropiedad("rutaUsuarios.txt");
+        File archivo = new File(ruta);
+        if (!archivo.exists()) return;
+
         try (BufferedReader reader = new BufferedReader(new FileReader(ruta))) {
             String linea;
             while ((linea = reader.readLine()) != null) {
-                String[] datos = linea.split(",");
-                if (datos.length >= 7) { // Asegúrate de que hay suficientes datos
-                    String tipoUsuario = datos[6]; // Suponiendo que el tipo está en la posición 6
-                    Usuario usuario = null;
-    
-                    // Crear el usuario según el tipo
-                    if ("Estudiante".equalsIgnoreCase(tipoUsuario)) {
-                        usuario = new Estudiante(datos[0], datos[1], datos[2], datos[3], 
-                                                 Boolean.parseBoolean(datos[4]), 
-                                                 Integer.parseInt(datos[5]), 
-                                                 new LinkedList<>(), new ArrayList<>());
-                    } else if ("Moderador".equalsIgnoreCase(tipoUsuario)) {
-                        usuario = new Moderador(datos[0], datos[1], datos[2], datos[3], 
-                                                Boolean.parseBoolean(datos[4]), 
-                                                Integer.parseInt(datos[5]));
-                    }
-    
-                    if (usuario != null) {
-                        listaUsuariosCache.add(usuario);
-                    }
+                Usuario usuario = parsearUsuario(linea);
+                if (usuario != null) {
+                    listaUsuariosCache.add(usuario);
                 }
             }
         } catch (IOException e) {
             utilLog.escribirLog("Error cargando usuarios: " + e.getMessage(), Level.SEVERE);
         }
     }
-    
 
-private void cargarContenidos() {
-    String ruta = utilProperties.obtenerPropiedad("rutaContenidos.txt");
-    try (BufferedReader reader = new BufferedReader(new FileReader(ruta))) {
-        String linea;
-        while ((linea = reader.readLine()) != null) {
-            String[] datos = linea.split("\\|");
-            if (datos.length >= 7) {
-                Contenido contenido = new Contenido(
-                    datos[0], // id
-                    datos[1], // título
-                    datos[2], // autor
-                    LocalDateTime.parse(datos[3]), // fecha
-                    TipoContenido.valueOf(datos[4]), // tipo
-                    datos[5], // descripción
-                    datos[6]  // tema
-                );
-                listaContenidosCache.add(contenido);
+    private Usuario parsearUsuario(String csv) {
+        String[] partes = csv.split(",");
+        if (partes.length < 7) return null;
+
+        // ✅ Asegurar que nunca sea null
+        String contrasena = (partes[3].equals("SIN_CONTRASEÑA") || partes[3].isEmpty()) ? "REVISAR_CONTRASEÑA" : partes[3];
+
+        Usuario usuario;
+        if (partes[6].equals("Estudiante")) {
+            usuario = new Estudiante(
+                    partes[0], partes[1], partes[2], contrasena,
+                    Boolean.parseBoolean(partes[4]), Integer.parseInt(partes[5]),
+                    new LinkedList<>(),
+                    partes.length > 7 ? Arrays.asList(partes[7].split(";")) : new ArrayList<>()
+            );
+        } else {
+            usuario = new Moderador(
+                    partes[0], partes[1], partes[2], contrasena,
+                    Boolean.parseBoolean(partes[4]), Integer.parseInt(partes[5])
+            );
+        }
+
+        return usuario;
+    }
+
+    private void cargarContenidos() {
+        String ruta = utilProperties.obtenerPropiedad("rutaContenidos.txt");
+        File archivo = new File(ruta);
+        if (!archivo.exists()) return;
+
+        try (BufferedReader reader = new BufferedReader(new FileReader(ruta))) {
+            String linea;
+            while ((linea = reader.readLine()) != null) {
+                Contenido contenido = parsearContenido(linea);
+                if (contenido != null) {
+                    listaContenidosCache.add(contenido);
+                }
             }
+        } catch (IOException e) {
+            utilLog.escribirLog("Error cargando contenidos: " + e.getMessage(), Level.SEVERE);
         }
-    } catch (IOException e) {
-        utilLog.escribirLog("Error cargando contenidos: " + e.getMessage(), Level.SEVERE);
     }
-}
 
-private void cargarSolicitudes() {
-    String ruta = utilProperties.obtenerPropiedad("rutaSolicitudes.txt");
-    try (BufferedReader reader = new BufferedReader(new FileReader(ruta))) {
-        String linea;
-        while ((linea = reader.readLine()) != null) {
-            String[] datos = linea.split(";");
-            if (datos.length >= 6) {
-                SolicitudAyuda solicitud = new SolicitudAyuda(
-                    datos[0], // id
-                    datos[1], // tema
-                    datos[2], // descripción
-                    new Date(Long.parseLong(datos[3])), // fecha
-                    Urgencia.valueOf(datos[4]), // urgencia
-                    datos[5]  // solicitanteId
-                );
-                solicitud.setEstado(Estado.valueOf(datos[6])); // estado
-                listaSolicitudesCache.add(solicitud);
+    private Contenido parsearContenido(String csv) {
+        String[] partes = csv.split("§");
+        if (partes.length < 7) return null;
+
+        String id = partes[0];
+        String titulo = partes[1];
+        String autor = partes[2];
+        LocalDateTime fecha = LocalDateTime.parse(partes[3]);
+        TipoContenido tipo = TipoContenido.valueOf(partes[4]);
+        String descripcion = partes[5];
+        String tema = partes[6];
+
+        Contenido contenido = new Contenido(id, titulo, autor, fecha, tipo, descripcion, tema);
+
+        if (partes.length > 7 && !partes[7].isEmpty()) {
+            LinkedList<Valoracion> valoraciones = Arrays.stream(partes[7].split("\\|"))
+                    .filter(s -> !s.isEmpty())
+                    .map(this::parseValoracion)
+                    .collect(Collectors.toCollection(LinkedList::new));
+            contenido.setValoraciones(valoraciones);
+        }
+
+        return contenido;
+    }
+
+    private Valoracion parseValoracion(String valoracionStr) {
+        String[] parts = valoracionStr.split("~");
+        if (parts.length < 7) {
+            // Valores por defecto para campos faltantes
+            return new Valoracion(
+                    parts.length > 0 ? parts[0] : UtilId.generarIdAleatorio(),
+                    parts.length > 1 ? parts[1] : "",
+                    parts.length > 2 ? parts[2] : "",
+                    parts.length > 3 ? parts[3] : "anonimo",
+                    parts.length > 4 ? Integer.parseInt(parts[4]) : 0,
+                    parts.length > 5 && !parts[5].isEmpty() ? new Date(Long.parseLong(parts[5])) : new Date(),
+                    parts.length > 6 ? parts[6] : ""
+            );
+        }
+
+        return new Valoracion(
+                parts[0],
+                parts[1],
+                parts[2],
+                parts[3],
+                Integer.parseInt(parts[4]),
+                new Date(Long.parseLong(parts[5])),
+                parts[6]
+        );
+    }
+
+    private void cargarSolicitudes() {
+        String ruta = utilProperties.obtenerPropiedad("rutaSolicitudes.txt");
+        File archivo = new File(ruta);
+        if (!archivo.exists()) return;
+
+        try (BufferedReader reader = new BufferedReader(new FileReader(ruta))) {
+            String linea;
+            while ((linea = reader.readLine()) != null) {
+                SolicitudAyuda solicitud = parsearSolicitud(linea);
+                if (solicitud != null) {
+                    listaSolicitudesCache.add(solicitud);
+                }
             }
+        } catch (IOException e) {
+            utilLog.escribirLog("Error cargando solicitudes: " + e.getMessage(), Level.SEVERE);
         }
-    } catch (IOException e) {
-        utilLog.escribirLog("Error cargando solicitudes: " + e.getMessage(), Level.SEVERE);
     }
-}
 
-private void cargarGrupos() {
-    String ruta = utilProperties.obtenerPropiedad("rutaGruposEstudio.txt");
-    try (BufferedReader reader = new BufferedReader(new FileReader(ruta))) {
-        String linea;
-        while ((linea = reader.readLine()) != null) {
-            String[] datos = linea.split("#");
-            if (datos.length >= 5) {
-                LinkedList<String> miembros = new LinkedList<>(Arrays.asList(datos[3].split(",")));
-                LinkedList<String> contenidos = new LinkedList<>(Arrays.asList(datos[4].split(",")));
-                
-                GrupoEstudio grupo = new GrupoEstudio(
-                    datos[0], // id
-                    datos[1], // nombre
-                    datos[2], // descripción
-                    miembros,
-                    contenidos,
-                    new Date(Long.parseLong(datos[5])) // fechaCreación
-                );
-                listaGruposCache.add(grupo);
+    private SolicitudAyuda parsearSolicitud(String csv) {
+        String[] partes = csv.split(";");
+        if (partes.length < 7) return null;
+
+        String id = partes[0];
+        String tema = partes[1];
+        String descripcion = partes[2];
+        Date fecha = new Date(Long.parseLong(partes[3]));
+        Urgencia urgencia = Urgencia.valueOf(partes[4]);
+        String solicitanteId = partes[5];
+        Estado estado = Estado.valueOf(partes[6]);
+
+        SolicitudAyuda solicitud = new SolicitudAyuda(id, tema, descripcion, fecha, urgencia, solicitanteId);
+        solicitud.setEstado(estado);
+        return solicitud;
+    }
+
+    private void cargarGrupos() {
+        String ruta = utilProperties.obtenerPropiedad("rutaGruposEstudio.txt");
+        File archivo = new File(ruta);
+        if (!archivo.exists()) return;
+
+        try (BufferedReader reader = new BufferedReader(new FileReader(ruta))) {
+            String linea;
+            while ((linea = reader.readLine()) != null) {
+                GrupoEstudio grupo = parsearGrupo(linea);
+                if (grupo != null) {
+                    listaGruposCache.add(grupo);
+                }
             }
-        }
-    } catch (IOException e) {
-        utilLog.escribirLog("Error cargando grupos: " + e.getMessage(), Level.SEVERE);
-    }
-}
-
-private void guardarContenidoEnArchivo(Contenido contenido) throws IOException {
-    String ruta = utilProperties.obtenerPropiedad("rutaContenidos.txt");
-    try (BufferedWriter writer = new BufferedWriter(new FileWriter(ruta, true))) {
-        writer.write(contenidoToCsv(contenido));
-        writer.newLine();
-    }
-}
-
-private String contenidoToCsv(Contenido contenido) {
-    return String.join("|",
-        contenido.getId(),
-        contenido.getTitulo(),
-        contenido.getAutor(),
-        contenido.getFecha().toString(),
-        contenido.getTipo().name(),
-        contenido.getDescripcion(),
-        contenido.getTema()
-    );
-}
-
-private void guardarTodosContenidos() throws IOException {
-    String ruta = utilProperties.obtenerPropiedad("rutaContenidos.txt");
-    try (BufferedWriter writer = new BufferedWriter(new FileWriter(ruta))) {
-        for (Contenido contenido : listaContenidosCache) {
-            writer.write(contenidoToCsv(contenido));
-            writer.newLine();
+        } catch (IOException e) {
+            utilLog.escribirLog("Error cargando grupos: " + e.getMessage(), Level.SEVERE);
         }
     }
-}
 
-private void guardarSolicitudEnArchivo(SolicitudAyuda solicitud) throws IOException {
-    String ruta = utilProperties.obtenerPropiedad("rutaSolicitudes.txt");
-    try (BufferedWriter writer = new BufferedWriter(new FileWriter(ruta, true))) {
-        writer.write(solicitudToCsv(solicitud));
-        writer.newLine();
+    private GrupoEstudio parsearGrupo(String csv) {
+        String[] partes = csv.split("#");
+        if (partes.length < 6) return null;
+
+        String idGrupo = partes[0];
+        String nombre = partes[1];
+        String descripcion = partes[2];
+        LinkedList<String> idMiembros = new LinkedList<>(Arrays.asList(partes[3].split(",")));
+        LinkedList<String> idContenidos = new LinkedList<>(Arrays.asList(partes[4].split(",")));
+        Date fechaCreacion = new Date(Long.parseLong(partes[5]));
+
+        return new GrupoEstudio(idGrupo, nombre, descripcion, idMiembros, idContenidos, fechaCreacion);
     }
-}
 
-private String solicitudToCsv(SolicitudAyuda solicitud) {
-    return String.join(";",
-        solicitud.getId(),
-        solicitud.getTema(),
-        solicitud.getDescripcion(),
-        String.valueOf(solicitud.getFecha().getTime()),
-        solicitud.getUrgencia().name(),
-        solicitud.getSolicitanteId(),
-        solicitud.getEstado().name()
-    );
-}
+    private void cargarReportes() {
+        String ruta = utilProperties.obtenerPropiedad("rutaReportes.txt");
+        File archivo = new File(ruta);
+        if (!archivo.exists()) return;
 
-private void guardarTodasSolicitudes() throws IOException {
-    String ruta = utilProperties.obtenerPropiedad("rutaSolicitudes.txt");
-    try (BufferedWriter writer = new BufferedWriter(new FileWriter(ruta))) {
-        for (SolicitudAyuda solicitud : listaSolicitudesCache) {
-            writer.write(solicitudToCsv(solicitud));
-            writer.newLine();
+        try (BufferedReader reader = new BufferedReader(new FileReader(ruta))) {
+            String linea;
+            while ((linea = reader.readLine()) != null) {
+                Reporte reporte = parsearReporte(linea);
+                if (reporte != null) {
+                    listaReportesCache.add(reporte);
+                }
+            }
+        } catch (IOException e) {
+            utilLog.escribirLog("Error cargando reportes: " + e.getMessage(), Level.SEVERE);
         }
     }
-}
 
-private void guardarGrupoEnArchivo(GrupoEstudio grupo) throws IOException {
-    String ruta = utilProperties.obtenerPropiedad("rutaGruposEstudio.txt");
-    try (BufferedWriter writer = new BufferedWriter(new FileWriter(ruta, true))) {
-        writer.write(grupoToCsv(grupo));
-        writer.newLine();
+    private Reporte parsearReporte(String csv) {
+        String[] partes = csv.split("~");
+        if (partes.length < 4) return null;
+
+        String idReporte = partes[0];
+        TipoReporte tipo = TipoReporte.valueOf(partes[1]);
+        String contenido = partes[2];
+        Date fechaGeneracion = new Date(Long.parseLong(partes[3]));
+
+        return new Reporte(idReporte, tipo, contenido, fechaGeneracion);
     }
-}
 
-private String grupoToCsv(GrupoEstudio grupo) {
-    return String.join("#",
-        grupo.getIdGrupo(),
-        grupo.getNombre(),
-        grupo.getDescripcion(),
-        String.join(",", grupo.getIdMiembros()),
-        String.join(",", grupo.getIdContenidos()),
-        String.valueOf(grupo.getFechaCreacion().getTime())
-    );
-}
+    public void actualizarEstudiante(Estudiante estudiante) {
+        try {
+            utilLog.escribirLog("Actualizando estudiante: " + estudiante.getNombre(), Level.INFO);
 
-private void guardarTodosGrupos() throws IOException {
-    String ruta = utilProperties.obtenerPropiedad("rutaGruposEstudio.txt");
-    try (BufferedWriter writer = new BufferedWriter(new FileWriter(ruta))) {
-        for (GrupoEstudio grupo : listaGruposCache) {
-            writer.write(grupoToCsv(grupo));
-            writer.newLine();
+            // Primero actualizamos la lista en memoria
+            listaUsuariosCache.removeIf(u -> u.getId().equals(estudiante.getId()));
+            listaUsuariosCache.add(estudiante);
+
+            // Luego guardamos los cambios en el archivo
+            guardarTodosUsuarios();
+
+        } catch (Exception e) {
+            utilLog.escribirLog("Error actualizando estudiante: " + e.getMessage(), Level.SEVERE);
+            throw new RuntimeException("Error al actualizar estudiante", e);
         }
     }
-}
+
+    public static class PersistenciaException extends RuntimeException {
+        public PersistenciaException(String message, Throwable cause) {
+            super(message, cause);
+        }
+    }
 }

@@ -15,7 +15,7 @@ import java.util.PriorityQueue;
  */
 public class RedSocial {
     private final String nombre = "AprendeJuntos"; // Nombre definido
-    private final UtilRedSocial utilRed;
+    private final transient UtilRedSocial utilRed;
     private List<Usuario> usuarios;
     private ArbolContenidos arbolContenidos;
     private GrafoAfinidad grafoAfinidad;

@@ -1,6 +1,7 @@
 package main.java.proyectofinal.utils;
 
 import java.util.*;
+import java.util.logging.Level;
 import java.util.stream.Collectors;
 
 import main.java.proyectofinal.excepciones.*;
@@ -102,13 +103,21 @@ public class UtilRedSocial {
         return utilPersistencia.obtenerContenidosPorUsuario(idEstudiante);
     }
 
+
     public void agregarContenidoAEstudiante(String idEstudiante, String idContenido) {
-        Estudiante estudiante = (Estudiante) this.buscarUsuario(idEstudiante);
+        Estudiante estudiante = (Estudiante) this.buscarUsuarioPorId(idEstudiante);
         Contenido contenido = this.buscarContenido(idContenido);
-        
+
         if (estudiante != null && contenido != null) {
             estudiante.agregarContenido(idContenido);
-            utilPersistencia.actualizarEstudiante(estudiante);
+            // Ahora usando el método correcto
+            this.actualizarEstudiante(estudiante);
+        } else {
+            utilLog.escribirLog(
+                    "No se pudo agregar contenido al estudiante. Estudiante: " + (estudiante != null) +
+                            ", Contenido: " + (contenido != null),
+                    Level.WARNING
+            );
         }
     }
 

@@ -1,23 +1,14 @@
 package main.java.proyectofinal.utils;
 
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.Serializable;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Properties;
+import java.io.*;
+import java.nio.file.*;
+import java.util.*;
 
-/**
- * Utilidad para manejar archivos de propiedades de configuración.
- * Implementa Singleton y carga las propiedades desde un archivo config.properties.
- */
 public class UtilProperties implements Serializable {
     private static final long serialVersionUID = 1L;
     private static UtilProperties instancia;
     private final Properties propiedades;
-    private transient UtilLog utilLog; // Transient para serialización
+    private static final String RUTA_DEFAULT = "resources/config.properties";
 
     private UtilProperties(String rutaArchivo) {
         this.propiedades = new Properties();
@@ -27,67 +18,48 @@ public class UtilProperties implements Serializable {
     private void cargarPropiedades(String rutaArchivo) {
         try {
             validarArchivo(rutaArchivo);
-            try (FileInputStream fis = new FileInputStream(rutaArchivo)) {
-                propiedades.load(fis);
-                getLogger().logInfo("Propiedades cargadas desde: " + rutaArchivo);
+            try (InputStream input = new FileInputStream(rutaArchivo)) {
+                propiedades.load(input);
+                System.out.println("Propiedades cargadas correctamente desde: " + rutaArchivo);
             }
         } catch (IOException e) {
-            getLogger().logSevere("Error al cargar propiedades: " + e.getMessage());
+            System.err.println("Error crítico al cargar el archivo de propiedades: " + e.getMessage());
             throw new RuntimeException("No se pudo cargar el archivo de propiedades", e);
         }
     }
 
     private void validarArchivo(String ruta) throws IOException {
-        if (!Files.exists(Paths.get(ruta))) {
-            throw new IOException("Archivo no encontrado: " + ruta);
+        Path path = Paths.get(ruta);
+        if (!Files.exists(path)) {
+            throw new IOException("Archivo de configuración no encontrado: " + ruta);
         }
         if (!ruta.endsWith(".properties")) {
-            throw new IOException("El archivo debe ser .properties");
+            throw new IOException("El archivo debe tener extensión .properties");
+        }
+        if (!Files.isReadable(path)) {
+            throw new IOException("No se tiene permisos de lectura para el archivo: " + ruta);
         }
     }
 
-    private UtilLog getLogger() {
-        if (utilLog == null) {
-            utilLog = UtilLog.getInstance();
-        }
-        return utilLog;
-    }
-
-    /**
-     * Obtiene el valor de una propiedad
-     * @param llave Clave de la propiedad
-     * @return Valor de la propiedad o null si no existe
-     */
     public String obtenerPropiedad(String llave) {
         if (llave == null || llave.trim().isEmpty()) {
-            getLogger().logWarning("Se solicitó propiedad con llave vacía");
+            System.err.println("Advertencia: Se solicitó una propiedad con llave vacía o inválida.");
             return null;
         }
-        return propiedades.getProperty(llave);
+        String valor = propiedades.getProperty(llave);
+        if (valor == null) {
+            System.err.println("Advertencia: No se encontró la propiedad '" + llave + "' en el archivo.");
+        }
+        return valor;
     }
 
-    /**
-     * Obtiene todas las claves de propiedades disponibles
-     * @return Lista de claves
-     */
-    public List<String> getAllKeys() {
-        return new ArrayList<>(propiedades.stringPropertyNames());
-    }
-
-    /**
-     * Singleton thread-safe
-     */
     public static synchronized UtilProperties getInstance() {
         if (instancia == null) {
-            String ruta = "resources/config.properties"; // Ruta por defecto
-            instancia = new UtilProperties(ruta);
+            instancia = new UtilProperties(RUTA_DEFAULT);
         }
         return instancia;
     }
 
-    /**
-     * Método para testing - Reinicia la instancia singleton
-     */
     protected static void resetInstance() {
         instancia = null;
     }

@@ -1,18 +1,23 @@
 package main.java.proyectofinal.modelo;
 
-/**
+/*
  * Clase abstracta que representa un usuario base en el sistema.
  * Las clases concretas (Estudiante, Moderador) deben extenderla.
  */
 
 import java.util.Objects;
 
+import com.google.gson.annotations.SerializedName;
 import main.java.proyectofinal.utils.UtilId;
 
 public abstract class Usuario {
     private String id;
+    @SerializedName("nombres") // ✅ Indicar que el JSON "nombres" debe asignarse aquí
     private String nombre;
+
+    @SerializedName("correo")
     private String correo;
+
     private String contrasenia;
     private boolean suspendido;
     private int diasSuspension;
@@ -20,12 +25,11 @@ public abstract class Usuario {
     public Usuario(){}
     public Usuario(String id, String nombre, String correo, String contrasenia, boolean suspendido, int diasSuspension) {
         this.id = (id == null || id.isEmpty()) ? UtilId.generarIdAleatorio() : id;
-        this.nombre = Objects.requireNonNull(nombre, "El nombre no puede ser nulo");
-        this.correo = Objects.requireNonNull(correo, "El correo no puede ser nulo");
-        this.contrasenia = Objects.requireNonNull(contrasenia, "La contraseña no puede ser nula");
-        this.suspendido = (suspendido) ? suspendido : false; // Esto es redundante, ya que suspendido siempre será true o false.
-        this.diasSuspension = (diasSuspension > 0) ? diasSuspension : 0;
-
+        this.nombre = nombre; // ✅ No usar requireNonNull en deserialización
+        this.correo = correo;
+        this.contrasenia = contrasenia;
+        this.suspendido = suspendido;
+        this.diasSuspension = diasSuspension;
     }
 
     //getters and setters

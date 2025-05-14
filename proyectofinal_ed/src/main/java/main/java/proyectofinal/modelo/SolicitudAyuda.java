@@ -1,6 +1,6 @@
 package main.java.proyectofinal.modelo;
 
-/**
+/*
  * Representa una solicitud de ayuda académica con un nivel de urgencia y estado (PENDIENTE/RESUELTA).
  * Delega la persistencia a UtilSolicitudAyuda.
  */
@@ -21,7 +21,7 @@ public class SolicitudAyuda {
     private Urgencia urgencia;
     private String solicitanteId ;
     private Estado estado;
-    private UtilSolicitudAyuda utilSolicitud;
+    private transient UtilSolicitudAyuda utilSolicitud;
 
     public SolicitudAyuda(){
     }

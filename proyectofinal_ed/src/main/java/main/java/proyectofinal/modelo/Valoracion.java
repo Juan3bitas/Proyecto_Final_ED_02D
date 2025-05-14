@@ -1,6 +1,6 @@
 package main.java.proyectofinal.modelo;
 
-/**
+/*
  * Representa una valoración (puntuación y comentario) hecha por un usuario sobre un contenido educativo.
  * El valor debe estar entre 1 y 5.
  */

@@ -1,0 +1,142 @@
+may 13, 2025 6:43:57 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Cargando usuarios desde: persistencia/archivos/Usuarios.txt
+may 13, 2025 6:43:57 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Cargando contenidos desde: persistencia/archivos/Contenidos.txt
+may 13, 2025 6:43:57 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Cargando solicitudes desde: persistencia/archivos/SolicitudesAyuda.txt
+may 13, 2025 6:43:57 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Cargando grupos desde: persistencia/archivos/GruposEstudio.txt
+may 13, 2025 6:43:57 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Datos iniciales cargados correctamente.
+may 13, 2025 6:43:57 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Obteniendo todos los usuarios
+may 13, 2025 6:43:57 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Obteniendo todos los usuarios
+may 13, 2025 6:44:44 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Buscando usuario por correo: correo@gmail.com
+may 13, 2025 6:44:44 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Guardando usuario: prueba
+may 13, 2025 6:44:44 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Guardando usuario en archivo: prueba
+may 13, 2025 6:44:44 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Convirtiendo usuario a CSV: prueba
+may 13, 2025 6:44:44 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Nuevo usuario registrado: correo@gmail.com
+may 13, 2025 8:01:58 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Datos iniciales cargados correctamente.
+may 13, 2025 8:01:58 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Obteniendo todos los usuarios
+may 13, 2025 8:01:58 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Obteniendo todos los usuarios
+may 13, 2025 8:02:57 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Buscando usuario por correo: correo2@gmail.com
+may 13, 2025 8:02:57 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Guardando usuario: juan
+may 13, 2025 8:02:57 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+GRAVE: Error guardando usuario: null
+may 13, 2025 8:02:57 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Nuevo usuario registrado: correo2@gmail.com
+may 13, 2025 8:10:19 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Datos iniciales cargados correctamente.
+may 13, 2025 8:10:19 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Obteniendo todos los usuarios
+may 13, 2025 8:10:19 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Obteniendo todos los usuarios
+may 13, 2025 8:11:26 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Buscando usuario por correo: correo40@gmail.com
+may 13, 2025 8:11:26 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Intentando guardar usuario: Prueba 40
+may 13, 2025 8:11:26 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+DETALLADO: Guardando usuarios en: persistencia/archivos/Usuarios.txt
+may 13, 2025 8:11:26 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+GRAVE: Error crítico guardando usuario: null
+may 13, 2025 8:11:34 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Buscando usuario por correo: correo40@gmail.com
+may 13, 2025 8:11:42 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Buscando usuario por correo: correo4q1@gmail.com
+may 13, 2025 8:11:42 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Intentando guardar usuario: Prueba 40
+may 13, 2025 8:11:42 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+DETALLADO: Guardando usuarios en: persistencia/archivos/Usuarios.txt
+may 13, 2025 8:11:42 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+GRAVE: Error crítico guardando usuario: null
+may 13, 2025 8:14:20 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Datos iniciales cargados correctamente.
+may 13, 2025 8:14:20 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Obteniendo todos los usuarios
+may 13, 2025 8:14:20 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Obteniendo todos los usuarios
+may 13, 2025 8:14:54 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Buscando usuario por correo: correo50@gmail.com
+may 13, 2025 8:14:54 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Intentando guardar usuario: jisdhjdsjds
+may 13, 2025 8:14:54 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+DETALLADO: Guardando usuarios en: persistencia/archivos/Usuarios.txt
+may 13, 2025 8:14:54 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Usuario guardado exitosamente: 19993860
+may 13, 2025 8:14:54 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Nuevo usuario registrado: correo50@gmail.com
+may 13, 2025 8:59:21 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: ✅ UtilPersistencia instanciada.
+may 13, 2025 8:59:21 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Obteniendo todos los usuarios
+may 13, 2025 8:59:21 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Obteniendo todos los usuarios
+may 13, 2025 9:00:18 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Buscando usuario por correo: correo1000@gmail.com
+may 13, 2025 9:00:18 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Intentando guardar usuario: Lorena
+may 13, 2025 9:00:18 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+DETALLADO: Guardando usuarios en: persistencia/archivos/Usuarios.txt
+may 13, 2025 9:00:18 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Usuario guardado exitosamente: 58900181
+may 13, 2025 9:00:18 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Nuevo usuario registrado: correo1000@gmail.com
+may 13, 2025 9:03:52 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: ✅ UtilPersistencia instanciada.
+may 13, 2025 9:03:52 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Obteniendo todos los usuarios
+may 13, 2025 9:03:52 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Obteniendo todos los usuarios
+may 13, 2025 9:04:57 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Buscando usuario por correo: correo9@gmail.com
+may 13, 2025 9:04:57 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Intentando guardar usuario: intentojdjnd
+may 13, 2025 9:04:57 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+DETALLADO: Guardando usuarios en: persistencia/archivos/Usuarios.txt
+may 13, 2025 9:04:57 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Usuario guardado exitosamente: 56176737
+may 13, 2025 9:04:57 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Nuevo usuario registrado: correo9@gmail.com
+may 13, 2025 9:07:18 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: ✅ UtilPersistencia instanciada.
+may 13, 2025 9:07:18 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Obteniendo todos los usuarios
+may 13, 2025 9:07:18 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Obteniendo todos los usuarios
+may 13, 2025 9:08:02 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Buscando usuario por correo: correo83837@gmail.com
+may 13, 2025 9:08:02 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Intentando guardar usuario: ajshsh
+may 13, 2025 9:08:02 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+DETALLADO: Guardando usuarios en: persistencia/archivos/Usuarios.txt
+may 13, 2025 9:08:02 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Usuario guardado exitosamente: 31412036
+may 13, 2025 9:08:02 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Nuevo usuario registrado: correo83837@gmail.com
+may 13, 2025 9:11:04 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: ✅ UtilPersistencia instanciada.
+may 13, 2025 9:11:04 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Obteniendo todos los usuarios
+may 13, 2025 9:11:04 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Obteniendo todos los usuarios
+may 13, 2025 9:11:40 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Buscando usuario por correo: sirva@gmail.com
+may 13, 2025 9:11:40 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Intentando guardar usuario: Intento793093873
+may 13, 2025 9:11:40 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+DETALLADO: Guardando usuarios en: persistencia/archivos/Usuarios.txt
+may 13, 2025 9:11:40 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Usuario guardado exitosamente: 89336460
+may 13, 2025 9:11:40 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Nuevo usuario registrado: sirva@gmail.com

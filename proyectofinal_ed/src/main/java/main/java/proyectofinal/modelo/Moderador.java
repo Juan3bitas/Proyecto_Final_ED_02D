@@ -13,7 +13,7 @@ import main.java.proyectofinal.excepciones.UsuarioNoSePudoSuspenderException;
 import main.java.proyectofinal.utils.UtilModerador;
 
 public class Moderador extends Usuario {
-    private UtilModerador utilModerador;
+    private transient UtilModerador utilModerador;
 
     public Moderador() {
         super();

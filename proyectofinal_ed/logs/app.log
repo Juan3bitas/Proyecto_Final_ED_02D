@@ -1,0 +1,58 @@
+may 13, 2025 3:55:06 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+GRAVE: Error cargando usuarios: persistencia\Usuarios.txt (El sistema no puede encontrar el archivo especificado)
+may 13, 2025 3:55:06 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+GRAVE: Error cargando contenidos: persistencia\Contenidos.txt (El sistema no puede encontrar el archivo especificado)
+may 13, 2025 4:50:24 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+GRAVE: Error cargando usuarios: persistencia\Usuarios.txt (El sistema no puede encontrar el archivo especificado)
+may 13, 2025 4:50:24 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+GRAVE: Error cargando contenidos: persistencia\Contenidos.txt (El sistema no puede encontrar el archivo especificado)
+may 13, 2025 6:02:44 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Nuevo usuario registrado: prueba@gmail.com
+may 13, 2025 6:23:47 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Cargando usuarios desde: persistencia/archivos/Usuarios.txt
+may 13, 2025 6:23:47 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Cargando contenidos desde: persistencia/archivos/Contenidos.txt
+may 13, 2025 6:23:47 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Cargando solicitudes desde: persistencia/archivos/SolicitudesAyuda.txt
+may 13, 2025 6:23:47 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Cargando grupos desde: persistencia/archivos/GruposEstudio.txt
+may 13, 2025 6:23:47 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Datos iniciales cargados correctamente.
+may 13, 2025 6:23:47 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Obteniendo todos los usuarios
+may 13, 2025 6:23:47 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Obteniendo todos los usuarios
+may 13, 2025 6:24:54 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Buscando usuario por correo: correo@gmail.com
+may 13, 2025 6:24:54 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Guardando usuario: prueba2
+may 13, 2025 6:24:54 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Guardando usuario en archivo: prueba2
+may 13, 2025 6:24:54 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Convirtiendo usuario a CSV: prueba2
+may 13, 2025 6:24:54 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Nuevo usuario registrado: correo@gmail.com
+may 13, 2025 6:35:51 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Cargando usuarios desde: persistencia/archivos/Usuarios.txt
+may 13, 2025 6:35:52 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Cargando contenidos desde: persistencia/archivos/Contenidos.txt
+may 13, 2025 6:35:52 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Cargando solicitudes desde: persistencia/archivos/SolicitudesAyuda.txt
+may 13, 2025 6:35:52 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Cargando grupos desde: persistencia/archivos/GruposEstudio.txt
+may 13, 2025 6:35:52 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Datos iniciales cargados correctamente.
+may 13, 2025 6:35:52 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Obteniendo todos los usuarios
+may 13, 2025 6:35:52 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Obteniendo todos los usuarios
+may 13, 2025 6:37:44 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Buscando usuario por correo: gmail@gmail.com
+may 13, 2025 6:37:44 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Guardando usuario: prueba3
+may 13, 2025 6:37:44 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Guardando usuario en archivo: prueba3
+may 13, 2025 6:37:44 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Convirtiendo usuario a CSV: prueba3
+may 13, 2025 6:37:44 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Nuevo usuario registrado: gmail@gmail.com
