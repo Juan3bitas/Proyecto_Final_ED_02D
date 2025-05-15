@@ -71,8 +71,13 @@
                     <execution>
                         <id>default-cli</id>
                         <configuration>
-                            <mainClass>main.java.proyectofinal.App</mainClass>
+                            <mainClass>proyectofinal.App</mainClass>
                             <launcher>app</launcher>
+                            <modules>
+                                <module>javafx.controls</module>
+                                <module>javafx.fxml</module>
+                                <module>javafx.base</module>
+                            </modules>
                         </configuration>
                     </execution>
                 </executions>
