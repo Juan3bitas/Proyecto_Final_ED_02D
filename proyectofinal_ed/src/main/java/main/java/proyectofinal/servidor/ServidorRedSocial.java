@@ -7,6 +7,7 @@ import main.java.proyectofinal.utils.UtilRedSocial;
 import java.io.*;
 import java.net.*;
 import java.util.Base64;
+import java.util.List;
 
 public class ServidorRedSocial {
     private static final int PUERTO = 12345;
@@ -129,6 +130,63 @@ public class ServidorRedSocial {
                     } catch (Exception e) {
                         respuesta.addProperty("exito", false);
                         respuesta.addProperty("mensaje", "Error interno al procesar login");
+                    }
+                    break;
+                case "OBTENER_CONTENIDOS":
+                    try {
+                        String userId = solicitud.get("userId").getAsString();
+                        List<Contenido> contenidos = redSocial.obtenerContenidosPorEstudiante(userId);
+
+                        JsonArray contenidosJson = new JsonArray();
+                        for (Contenido contenido : contenidos) {
+                            JsonObject contenidoJson = new JsonObject();
+                            contenidoJson.addProperty("id", contenido.getId());
+                            contenidoJson.addProperty("titulo", contenido.getTitulo());
+                            contenidoJson.addProperty("autor", contenido.getAutor());
+                            contenidoJson.addProperty("tema", contenido.getTema());
+                            contenidoJson.addProperty("descripcion", contenido.getDescripcion());
+                            contenidoJson.addProperty("tipo", contenido.getTipo().toString());
+                            contenidosJson.add(contenidoJson);
+                        }
+
+                        respuesta.addProperty("exito", true);
+                        respuesta.add("contenidos", contenidosJson);
+                    } catch (Exception e) {
+                        respuesta.addProperty("exito", false);
+                        respuesta.addProperty("mensaje", "Error al obtener contenidos: " + e.getMessage());
+                    }
+                    break;
+
+                case "OBTENER_SOLICITUDES":
+                    try {
+                        String userId = solicitud.get("userId").getAsString();
+                        List<SolicitudAyuda> solicitudes = redSocial.obtenerSolicitudes();
+
+                        JsonArray solicitudesJson = new JsonArray();
+                        for (SolicitudAyuda solicitudAyuda : solicitudes) {
+                            JsonObject solicitudJson = new JsonObject();
+                            solicitudJson.addProperty("id", solicitudAyuda.getId());
+                            solicitudJson.addProperty("tema", solicitudAyuda.getTema());
+                            solicitudJson.addProperty("descripcion", solicitudAyuda.getDescripcion());
+                            solicitudJson.addProperty("fecha", solicitudAyuda.getFecha().getTime()); // Convertir Date a timestamp
+                            solicitudJson.addProperty("urgencia", solicitudAyuda.getUrgencia().toString());
+                            solicitudJson.addProperty("solicitanteId", solicitudAyuda.getSolicitanteId());
+                            solicitudJson.addProperty("estado", solicitudAyuda.getEstado().toString());
+
+                            // Opcional: Agregar nombre del solicitante si está disponible
+                            Usuario solicitante = redSocial.buscarUsuario(solicitudAyuda.getSolicitanteId());
+                            if (solicitante != null) {
+                                solicitudJson.addProperty("solicitanteNombre", solicitante.getNombre());
+                            }
+
+                            solicitudesJson.add(solicitudJson);
+                        }
+
+                        respuesta.addProperty("exito", true);
+                        respuesta.add("solicitudes", solicitudesJson);
+                    } catch (Exception e) {
+                        respuesta.addProperty("exito", false);
+                        respuesta.addProperty("mensaje", "Error al obtener solicitudes: " + e.getMessage());
                     }
                     break;
 
