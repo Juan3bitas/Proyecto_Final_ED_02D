@@ -1,81 +1,32 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
-  <component name="AutoImportSettings">
-    <option name="autoReloadType" value="SELECTIVE" />
-  </component>
   <component name="ChangeListManager">
     <list default="true" id="dc96ce33-ef83-4167-802b-e9f4d0cc0b43" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/.idea/compiler.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/encodings.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/jarRepositories.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/Proyecto_Final_ED_02D.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/Proyecto_Final_ED_02D.iml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/proyectofinal_ed/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/proyectofinal_ed/pom.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/proyectofinal_ed/src/main/java/main/java/proyectofinal/excepciones/ContenidoNoSePudoEliminar.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/proyectofinal_ed/src/main/java/main/java/proyectofinal/excepciones/EstadoNoValidoException.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/proyectofinal_ed/src/main/java/main/java/proyectofinal/excepciones/OperacionFallidaException.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/proyectofinal_ed/src/main/java/main/java/proyectofinal/excepciones/SolicitudNoEncontradaException.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/proyectofinal_ed/src/main/java/main/java/proyectofinal/excepciones/UsuarioNoSePudoSuspenderException.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/proyectofinal_ed/src/main/java/main/java/proyectofinal/modelo/ArbolContenidos.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/proyectofinal_ed/src/main/java/main/java/proyectofinal/modelo/Contenido.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/proyectofinal_ed/src/main/java/main/java/proyectofinal/modelo/CriterioOrden.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/proyectofinal_ed/src/main/java/main/java/proyectofinal/modelo/Estado.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/proyectofinal_ed/src/main/java/main/java/proyectofinal/modelo/Estudiante.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/proyectofinal_ed/src/main/java/main/java/proyectofinal/modelo/GrafoAfinidad.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/proyectofinal_ed/src/main/java/main/java/proyectofinal/modelo/GrupoEstudio.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/proyectofinal_ed/src/main/java/main/java/proyectofinal/modelo/Moderador.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/proyectofinal_ed/src/main/java/main/java/proyectofinal/modelo/RedSocial.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/proyectofinal_ed/src/main/java/main/java/proyectofinal/modelo/Reporte.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/proyectofinal_ed/src/main/java/main/java/proyectofinal/modelo/SolicitudAyuda.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/proyectofinal_ed/src/main/java/main/java/proyectofinal/modelo/TipoContenido.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/proyectofinal_ed/src/main/java/main/java/proyectofinal/modelo/TipoReporte.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/proyectofinal_ed/src/main/java/main/java/proyectofinal/modelo/Urgencia.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/proyectofinal_ed/src/main/java/main/java/proyectofinal/modelo/Usuario.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/proyectofinal_ed/src/main/java/main/java/proyectofinal/modelo/Valoracion.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/proyectofinal_ed/src/main/java/main/java/proyectofinal/servidor/ServidorRedSocial.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/proyectofinal_ed/src/main/java/main/java/proyectofinal/utils/UtilEstudiante.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/proyectofinal_ed/src/main/java/main/java/proyectofinal/utils/UtilGrupoEstudio.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/proyectofinal_ed/src/main/java/main/java/proyectofinal/utils/UtilId.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/proyectofinal_ed/src/main/java/main/java/proyectofinal/utils/UtilLog.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/proyectofinal_ed/src/main/java/main/java/proyectofinal/utils/UtilModerador.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/proyectofinal_ed/src/main/java/main/java/proyectofinal/utils/UtilPersistencia.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/proyectofinal_ed/src/main/java/main/java/proyectofinal/utils/UtilProperties.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/proyectofinal_ed/src/main/java/main/java/proyectofinal/utils/UtilRedSocial.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/proyectofinal_ed/src/main/java/main/java/proyectofinal/utils/UtilSolicitudAyuda.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/proyectofinal_ed/src/main/java/module-info.java" beforeDir="false" afterPath="$PROJECT_DIR$/proyectofinal_ed/src/main/java/module-info.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/proyectofinal_ed/target/classes/module-info.class" beforeDir="false" afterPath="$PROJECT_DIR$/proyectofinal_ed/target/classes/module-info.class" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/proyectofinal_ed/src/main/java/main/java/proyectofinal/servidor/ServidorRedSocial.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
     <option name="LAST_RESOLUTION" value="IGNORE" />
   </component>
-  <component name="FileTemplateManagerImpl">
-    <option name="RECENT_TEMPLATES">
-      <list>
-        <option value="Class" />
-      </list>
-    </option>
-  </component>
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
-  <component name="GitHubPullRequestSearchHistory">{
-  &quot;lastFilter&quot;: {
-    &quot;state&quot;: &quot;OPEN&quot;,
-    &quot;assignee&quot;: &quot;sarvc90&quot;
+  <component name="GitHubPullRequestSearchHistory"><![CDATA[{
+  "lastFilter": {
+    "state": "OPEN",
+    "assignee": "sarvc90"
   }
-}</component>
-  <component name="GithubPullRequestsUISettings">{
-  &quot;selectedUrlAndAccountId&quot;: {
-    &quot;url&quot;: &quot;https://github.com/Juan3bitas/Proyecto_Final_ED_02D.git&quot;,
-    &quot;accountId&quot;: &quot;f10011c8-4287-438a-82b4-65016593e5ed&quot;
+}]]></component>
+  <component name="GithubPullRequestsUISettings"><![CDATA[{
+  "selectedUrlAndAccountId": {
+    "url": "https://github.com/Juan3bitas/Proyecto_Final_ED_02D.git",
+    "accountId": "d9d960eb-3cd7-4898-bc21-4d29bba7e69d"
   }
-}</component>
-  <component name="ProjectColorInfo">{
-  &quot;associatedIndex&quot;: 0
-}</component>
+}]]></component>
+  <component name="ProjectColorInfo"><![CDATA[{
+  "associatedIndex": 0
+}]]></component>
   <component name="ProjectId" id="2x3ZkQmUPLbOo6P3eqYhbIGxNtC" />
   <component name="ProjectViewState">
     <option name="hideEmptyMiddlePackages" value="true" />
@@ -83,70 +34,19 @@
   </component>
   <component name="PropertiesComponent"><![CDATA[{
   "keyToString": {
-    "Application.App.executor": "Run",
-    "Application.proyectofinal.App.executor": "Run",
     "RunOnceActivity.ShowReadmeOnStart": "true",
-    "RunOnceActivity.git.unshallow": "true",
-    "SHARE_PROJECT_CONFIGURATION_FILES": "true",
     "git-widget-placeholder": "main",
     "kotlin-language-version-configured": "true",
     "last_opened_file_path": "C:/Users/sccva/IdeaProjects/proyectoSi/Proyecto_Final_ED_02D",
-    "node.js.detected.package.eslint": "true",
-    "node.js.detected.package.tslint": "true",
-    "node.js.selected.package.eslint": "(autodetect)",
-    "node.js.selected.package.tslint": "(autodetect)",
     "nodejs_package_manager_path": "npm",
-    "project.structure.last.edited": "Modules",
-    "project.structure.proportion": "0.15",
-    "project.structure.side.proportion": "0.2",
-    "settings.editor.selected.configurable": "MavenSettings",
     "vue.rearranger.settings.migration": "true"
   }
 }]]></component>
-  <component name="RecentsManager">
-    <key name="MoveFile.RECENT_KEYS">
-      <recent name="C:\Users\Lenovo\IdeaProjects\Proyecto_Final_ED_02D\proyectofinal_ed\src\main\java" />
-    </key>
-  </component>
-  <component name="RunManager" selected="Application.proyectofinal.App">
-    <configuration name="App" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
-      <option name="MAIN_CLASS_NAME" value="main.java.proyectofinal.App" />
-      <module name="Proyecto_Final_ED_02D" />
-      <extension name="coverage">
-        <pattern>
-          <option name="PATTERN" value="main.java.proyectofinal.*" />
-          <option name="ENABLED" value="true" />
-        </pattern>
-      </extension>
-      <method v="2">
-        <option name="Make" enabled="true" />
-      </method>
-    </configuration>
-    <configuration name="proyectofinal.App" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
-      <option name="MAIN_CLASS_NAME" value="proyectofinal.App" />
-      <module name="proyectofinal_ed" />
-      <extension name="coverage">
-        <pattern>
-          <option name="PATTERN" value="proyectofinal.*" />
-          <option name="ENABLED" value="true" />
-        </pattern>
-      </extension>
-      <method v="2">
-        <option name="Make" enabled="true" />
-      </method>
-    </configuration>
-    <recent_temporary>
-      <list>
-        <item itemvalue="Application.proyectofinal.App" />
-        <item itemvalue="Application.App" />
-      </list>
-    </recent_temporary>
-  </component>
   <component name="SharedIndexes">
     <attachedChunks>
       <set>
-        <option value="bundled-jdk-9823dce3aa75-fbdcb00ec9e3-intellij.indexing.shared.core-IU-251.23774.435" />
-        <option value="bundled-js-predefined-d6986cc7102b-f27c65a3e318-JavaScript-IU-251.23774.435" />
+        <option value="bundled-jdk-9823dce3aa75-28b599e66164-intellij.indexing.shared.core-IU-242.26775.15" />
+        <option value="bundled-js-predefined-d6986cc7102b-5c90d61e3bab-JavaScript-IU-242.26775.15" />
       </set>
     </attachedChunks>
   </component>
@@ -159,19 +59,10 @@
       <option name="presentableId" value="Default" />
       <updated>1747168859983</updated>
       <workItem from="1747168861271" duration="94000" />
-      <workItem from="1747262949494" duration="4657000" />
-      <workItem from="1747275953318" duration="810000" />
-      <workItem from="1747276785070" duration="1856000" />
-      <workItem from="1747278659724" duration="1150000" />
-      <workItem from="1747279830088" duration="931000" />
     </task>
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
     <option name="version" value="3" />
-  </component>
-  <component name="XSLT-Support.FileAssociations.UIState">
-    <expand />
-    <select />
   </component>
 </project>
