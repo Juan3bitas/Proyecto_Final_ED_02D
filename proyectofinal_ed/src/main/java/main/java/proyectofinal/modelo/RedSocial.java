@@ -237,7 +237,7 @@ public class RedSocial {
         utilRed.actualizarEstudiante(e2);
     }
 
-    private Usuario buscarUsuario(String idUsuario) {
+    public Usuario buscarUsuario(String idUsuario) {
         return usuarios.stream()
                 .filter(u -> u.getId().equals(idUsuario))
                 .findFirst()
@@ -291,4 +291,24 @@ public class RedSocial {
         return Collections.unmodifiableList(this.arbolContenidos.obtenerTodosEnOrden());
     }
 
+    public List<Contenido> obtenerContenidosPorEstudiante(String userId) {
+        List<Contenido> contenidos = new ArrayList<>();
+        for (Contenido contenido : arbolContenidos.obtenerTodosEnOrden()) {
+            if (contenido.getAutor().equals(userId)) {
+                contenidos.add(contenido);
+            }
+        }
+        return contenidos;
+    }
+
+    public List<SolicitudAyuda> obtenerSolicitudes() {
+        List<SolicitudAyuda> solicitudes = new ArrayList<>();
+        while (!colaSolicitudes.isEmpty()) {
+            SolicitudAyuda solicitud = colaSolicitudes.poll();
+            if (solicitud != null) {
+                solicitudes.add(solicitud);
+            }
+        }
+        return solicitudes;
+    }
 }
