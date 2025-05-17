@@ -29,6 +29,48 @@ public class ArbolContenidos {
         }
     }
 
+    public void eliminar(Contenido contenido) {
+        raiz = eliminarRec(raiz, contenido);
+    }
+
+    private NodoContenido eliminarRec(NodoContenido nodo, Contenido contenido) {
+        if (nodo == null) {
+            return null;
+        }
+
+        int cmp = comparador.compare(contenido, nodo.contenido);
+
+        if (cmp < 0) {
+            nodo.izquierdo = eliminarRec(nodo.izquierdo, contenido);
+        } else if (cmp > 0) {
+            nodo.derecho = eliminarRec(nodo.derecho, contenido);
+        } else {
+            // Nodo encontrado
+            if (nodo.izquierdo == null && nodo.derecho == null) {
+                return null; // Sin hijos
+            } else if (nodo.izquierdo == null) {
+                return nodo.derecho; // Un solo hijo derecho
+            } else if (nodo.derecho == null) {
+                return nodo.izquierdo; // Un solo hijo izquierdo
+            } else {
+                // Dos hijos: encontrar el sucesor (mínimo del subárbol derecho)
+                NodoContenido sucesor = encontrarMin(nodo.derecho);
+                nodo.contenido = sucesor.contenido; // Reemplazar contenido
+                nodo.derecho = eliminarRec(nodo.derecho, sucesor.contenido); // Eliminar el sucesor
+            }
+        }
+
+        return nodo;
+    }
+
+    private NodoContenido encontrarMin(NodoContenido nodo) {
+        while (nodo.izquierdo != null) {
+            nodo = nodo.izquierdo;
+        }
+        return nodo;
+    }
+
+
     private static class NodoContenido {
         Contenido contenido;
         NodoContenido izquierdo;

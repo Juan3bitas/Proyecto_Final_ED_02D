@@ -1,2 +1,0 @@
-53893591,Sara,sara@gmail.com,contraseña,false,0,Estudiante,Dormir,
-27530329,Juan,correo974@gmail.com,contraseña,false,0,Estudiante,Matemáticas,

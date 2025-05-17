@@ -61,10 +61,21 @@ public class UtilRedSocial {
         return null;
     }
 
-    public void eliminarUsuario(String id) {
-        utilPersistencia.eliminarUsuario(id);
-        utilLog.logInfo("Usuario eliminado: " + id);
+    public boolean eliminarUsuario(String id) {
+        if (id == null || id.isEmpty()) {
+            return false;
+        }
+
+        try {
+            utilPersistencia.eliminarUsuario(id);
+            utilLog.logInfo("Usuario eliminado: " + id);
+            return true;
+        } catch (Exception e) {
+            utilLog.logSevere("Error al eliminar el usuario con ID " + id + ": " + e.getMessage());
+            return false;
+        }
     }
+
 
     public void modificarUsuario(Usuario usuario) {
         utilPersistencia.actualizarUsuario(usuario);
@@ -398,13 +409,21 @@ public class UtilRedSocial {
         }
     }
 
-    public void actualizarEstudiante(Estudiante estudiante) {
+    public boolean actualizarEstudiante(Estudiante estudiante) {
         if (estudiante == null) {
-            throw new IllegalArgumentException("El estudiante no puede ser nulo");
+            return false;
         }
-        utilPersistencia.actualizarEstudiante(estudiante);
-        utilLog.logInfo("Estudiante actualizado: " + estudiante.getId());
+
+        try {
+            utilPersistencia.actualizarEstudiante(estudiante);
+            utilLog.logInfo("Estudiante actualizado: " + estudiante.getId());
+            return true;
+        } catch (Exception e) {
+            utilLog.logSevere("Error actualizando estudiante: " + e.getMessage());
+            return false;
+        }
     }
+
 
     public void agregarValoracionAContenido(String idContenido, String idEstudiante, int puntuacion, String comentario) {
         // Validaciones mejoradas

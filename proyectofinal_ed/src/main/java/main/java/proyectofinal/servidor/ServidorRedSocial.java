@@ -189,6 +189,149 @@ public class ServidorRedSocial {
                         respuesta.addProperty("mensaje", "Error al obtener solicitudes: " + e.getMessage());
                     }
                     break;
+                case "ACTUALIZAR_USUARIO":
+                    try {
+                        // Validar campos obligatorios
+                        if (!datos.has("id")) {
+                            throw new IllegalArgumentException("Falta el ID del usuario");
+                        }
+
+                        // Obtener datos del usuario
+                        String id = datos.get("id").getAsString();
+                        String nombre = datos.has("nombre") ? datos.get("nombre").getAsString() : null;
+                        String email = datos.has("email") ? datos.get("email").getAsString() : null;
+                        String password = datos.has("password") ? datos.get("password").getAsString() : null;
+
+                        // Validar que al menos un campo se esté actualizando
+                        if (nombre == null && email == null && password == null) {
+                            throw new IllegalArgumentException("Debe proporcionar al menos un campo para actualizar");
+                        }
+
+                        // Buscar usuario existente
+                        Usuario usuario = redSocial.buscarUsuario(id);
+                        if (usuario == null) {
+                            throw new IllegalArgumentException("Usuario no encontrado");
+                        }
+
+                        // Actualizar campos (solo los proporcionados)
+                        if (nombre != null) usuario.setNombre(nombre);
+                        if (email != null) usuario.setCorreo(email);
+                        if (password != null) usuario.setContrasenia(password);
+
+                        // Guardar cambios
+                        boolean exito = redSocial.actualizarUsuario(usuario);
+
+                        if (exito) {
+                            respuesta.addProperty("exito", true);
+                            respuesta.addProperty("mensaje", "Datos actualizados correctamente");
+                            respuesta.add("usuario", gson.toJsonTree(usuario));
+                        } else {
+                            respuesta.addProperty("exito", false);
+                            respuesta.addProperty("mensaje", "No se pudo actualizar el usuario");
+                        }
+
+                    } catch (IllegalArgumentException e) {
+                        respuesta.addProperty("exito", false);
+                        respuesta.addProperty("mensaje", "Error: " + e.getMessage());
+                    } catch (Exception e) {
+                        respuesta.addProperty("exito", false);
+                        respuesta.addProperty("mensaje", "Error interno al actualizar usuario");
+                    }
+                    break;
+
+                case "ELIMINAR_USUARIO":
+                    try {
+                        // Validar campos obligatorios
+                        if (!datos.has("usuarioId") && !datos.has("id")) {
+                            throw new IllegalArgumentException("Falta el ID del usuario");
+                        }
+                        String usuarioId = datos.has("usuarioId") ? datos.get("usuarioId").getAsString() : datos.get("id").getAsString();
+
+
+                        // Verificar que el usuario existe
+                        Usuario usuario = redSocial.buscarUsuario(usuarioId);
+                        if (usuario == null) {
+                            throw new IllegalArgumentException("Usuario no encontrado");
+                        }
+
+                        // Eliminar usuario
+                        boolean exito = redSocial.eliminarUsuario(usuarioId);
+
+                        if (exito) {
+                            respuesta.addProperty("exito", true);
+                            respuesta.addProperty("mensaje", "Cuenta eliminada correctamente");
+                        } else {
+                            respuesta.addProperty("exito", false);
+                            respuesta.addProperty("mensaje", "No se pudo eliminar el usuario");
+                        }
+
+                    } catch (IllegalArgumentException e) {
+                        respuesta.addProperty("exito", false);
+                        respuesta.addProperty("mensaje", "Error: " + e.getMessage());
+                    } catch (Exception e) {
+                        respuesta.addProperty("exito", false);
+                        respuesta.addProperty("mensaje", "Error interno al eliminar usuario");
+                    }
+                    break;
+                case "OBTENER_INFO_USUARIO":
+                    try {
+                        if (!datos.has("id")) {
+                            throw new IllegalArgumentException("Falta el ID del usuario");
+                        }
+                        String idUsuario = datos.get("id").getAsString();
+
+                        Usuario usuario = redSocial.buscarUsuario(idUsuario);
+                        if (usuario == null) {
+                            throw new IllegalArgumentException("Usuario no encontrado");
+                        }
+
+                        JsonObject usuarioJson = new JsonObject();
+                        usuarioJson.addProperty("id", usuario.getId());
+                        usuarioJson.addProperty("nombre", usuario.getNombre());
+                        usuarioJson.addProperty("email", usuario.getCorreo());  // aquí usas "email"
+
+                        respuesta.addProperty("exito", true);
+                        respuesta.add("usuario", usuarioJson);
+
+                    } catch (IllegalArgumentException e) {
+                        respuesta.addProperty("exito", false);
+                        respuesta.addProperty("mensaje", "Error: " + e.getMessage());
+                    } catch (Exception e) {
+                        respuesta.addProperty("exito", false);
+                        respuesta.addProperty("mensaje", "Error interno al obtener info usuario");
+                    }
+                    break;
+
+                case "OBTENER_USUARIO":
+                    try {
+                        if (!datos.has("id")) {
+                            throw new IllegalArgumentException("Falta el ID del usuario");
+                        }
+                        String idUsuario = datos.get("id").getAsString();
+
+                        Usuario usuario = redSocial.buscarUsuario(idUsuario);
+                        if (usuario == null) {
+                            throw new IllegalArgumentException("Usuario no encontrado");
+                        }
+
+                        JsonObject usuarioJson = new JsonObject();
+                        usuarioJson.addProperty("id", usuario.getId());
+                        usuarioJson.addProperty("nombre", usuario.getNombre());
+                        usuarioJson.addProperty("email", usuario.getCorreo());  // "email" igual aquí
+
+                        respuesta.addProperty("exito", true);
+                        respuesta.add("usuario", usuarioJson);
+
+                    } catch (IllegalArgumentException e) {
+                        respuesta.addProperty("exito", false);
+                        respuesta.addProperty("mensaje", "Error: " + e.getMessage());
+                    } catch (Exception e) {
+                        respuesta.addProperty("exito", false);
+                        respuesta.addProperty("mensaje", "Error interno al obtener info usuario");
+                    }
+                    break;
+
+
 
                 default:
                     respuesta.addProperty("exito", false);

@@ -138,12 +138,6 @@ public class RedSocial {
         grafoAfinidad.agregarNodo((Estudiante) usuario); // Solo si es Estudiante
     }
 
-    public void eliminarUsuario(String idUsuario) {
-        Usuario usuario = buscarUsuario(idUsuario);
-        utilRed.eliminarUsuario(idUsuario);
-        usuarios.remove(usuario);
-        grafoAfinidad.removerNodo((Estudiante) usuario); // Solo si es Estudiante
-    }
 
     public void modificarUsuario(Usuario usuario) {
         validarUsuario(usuario);
@@ -311,4 +305,73 @@ public class RedSocial {
         }
         return solicitudes;
     }
+
+    public boolean actualizarUsuario(Usuario usuario) {
+        try {
+            // Verificar si el usuario es un Estudiante
+            if (usuario instanceof Estudiante) {
+                Estudiante estudiante = (Estudiante) usuario;
+                return utilRed.actualizarEstudiante(estudiante);
+            } else {
+                System.err.println("Error: El usuario no es un Estudiante");
+                return false;
+            }
+        } catch (Exception e) {
+            System.err.println("Error al actualizar usuario: " + e.getMessage());
+            return false;
+        }
+    }
+
+    public boolean eliminarUsuario(String usuarioId) {
+        try {
+            Usuario usuario = buscarUsuario(usuarioId);
+            if (usuario == null) {
+                return false;
+            }
+
+            eliminarContenidosUsuario(usuarioId);
+            eliminarSolicitudesUsuario(usuarioId);
+
+            // 3. Eliminar el usuario
+            return utilRed.eliminarUsuario(usuarioId);
+
+        } catch (Exception e) {
+            System.err.println("Error al eliminar usuario: " + e.getMessage());
+            return false;
+        }
+    }
+
+    private void eliminarContenidosUsuario(String usuarioId) {
+        List<Contenido> contenidos = arbolContenidos.obtenerTodosEnOrden();
+        List<Contenido> aEliminar = new ArrayList<>();
+
+        for (Contenido contenido : contenidos) {
+            if (contenido.getAutor().equals(usuarioId)) {
+                aEliminar.add(contenido);
+            }
+        }
+
+        for (Contenido contenido : aEliminar) {
+            arbolContenidos.eliminar(contenido); // Este método debe estar implementado en tu ArbolContenidos
+            utilRed.eliminarContenido(contenido.getId());
+        }
+    }
+
+
+    private void eliminarSolicitudesUsuario(String usuarioId) {
+        PriorityQueue<SolicitudAyuda> nuevaCola = new PriorityQueue<>(Comparator.comparingInt(s -> s.getUrgencia().ordinal()));
+
+        while (!colaSolicitudes.isEmpty()) {
+            SolicitudAyuda solicitud = colaSolicitudes.poll();
+            if (!solicitud.getSolicitanteId().equals(usuarioId)) {
+                nuevaCola.add(solicitud);
+            } else {
+                utilRed.eliminarSolicitud(solicitud.getId());
+            }
+        }
+
+        this.colaSolicitudes = nuevaCola;
+    }
+
+
 }
