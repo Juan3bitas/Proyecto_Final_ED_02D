@@ -492,4 +492,6 @@ public class UtilRedSocial {
         }
         utilLog.logInfo("Grupos guardados en la persistencia");
     }
+
+
 }

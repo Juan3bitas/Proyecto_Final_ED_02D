@@ -2,12 +2,10 @@ package main.java.proyectofinal.modelo;
 
 import main.java.proyectofinal.excepciones.OperacionFallidaException;
 import main.java.proyectofinal.utils.UtilRedSocial;
-import java.util.List;
-import java.util.Objects;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.PriorityQueue;
+
+import java.io.IOException;
+import java.time.LocalDateTime;
+import java.util.*;
 
 /**
  * Clase principal que coordina todas las operaciones de la red social
@@ -90,10 +88,63 @@ public class RedSocial {
         }
     }
 
-    public void agregarContenido(Contenido contenido) {
-        Objects.requireNonNull(contenido, "El contenido no puede ser nulo");
-        utilRed.guardarContenido(contenido);
-        arbolContenidos.insertar(contenido);
+    /**
+     * Crea un nuevo contenido educativo asociado a un estudiante
+     * @param estudianteId ID del estudiante autor (no puede ser nulo o vacío)
+     * @param titulo Título del contenido (no puede ser nulo o vacío)
+     * @param descripcion Descripción detallada (no puede ser nula)
+     * @param tipo Tipo de contenido según enum TipoContenido (no puede ser nulo)
+     * @param tema Área de conocimiento (no puede ser nula)
+     * @param contenidoRuta Ruta absoluta del archivo o URL completa (no puede ser nula)
+     * @return true si se creó exitosamente, false si hubo error
+     * @throws IllegalArgumentException si los parámetros no cumplen validaciones
+     */
+    public boolean crearContenido(String estudianteId, String titulo, String descripcion,
+                                  TipoContenido tipo, String tema, String contenidoRuta) throws OperacionFallidaException {
+        // Validaciones estrictas
+        Objects.requireNonNull(estudianteId, "ID de estudiante no puede ser nulo");
+        Objects.requireNonNull(titulo, "Título no puede ser nulo");
+        Objects.requireNonNull(tipo, "Tipo de contenido no puede ser nulo");
+        Objects.requireNonNull(tema, "Tema no puede ser nulo");
+        Objects.requireNonNull(contenidoRuta, "Ruta/URL de contenido no puede ser nula");
+        Objects.requireNonNull(descripcion, "Descripción no puede ser nula");
+
+        if (estudianteId.trim().isEmpty() || titulo.trim().isEmpty()) {
+            throw new IllegalArgumentException("ID de estudiante y título no pueden estar vacíos");
+        }
+
+        // Validación específica para enlaces
+        if (tipo == TipoContenido.ENLACE && !contenidoRuta.matches("^(https?|ftp)://.*$")) {
+            throw new IllegalArgumentException("Formato de enlace inválido. Debe comenzar con http://, https:// o ftp://");
+        }
+
+        // Buscar y validar estudiante
+        Usuario usuario = buscarUsuario(estudianteId);
+        if (!(usuario instanceof Estudiante)) {
+            throw new IllegalArgumentException("El ID no corresponde a un estudiante registrado");
+        }
+        Estudiante estudiante = (Estudiante) usuario;
+
+        Contenido nuevoContenido;
+        // Crear nuevo contenido con lista vacía de valoraciones
+        nuevoContenido = new Contenido(
+                null, // Se generará ID automático
+                titulo,
+                estudiante.getNombre(),
+                LocalDateTime.now(),
+                tipo,
+                descripcion,
+                tema,
+                contenidoRuta,
+                null // Se inicializará lista vacía en el constructor
+        );
+
+        // Actualizar relaciones
+        estudiante.agregarContenido(nuevoContenido.getId());
+        arbolContenidos.insertar(nuevoContenido);
+        utilRed.guardarContenido(nuevoContenido);
+
+        return true;
     }
 
     public List<Contenido> getContenidoPorAutor(String autor) {
@@ -374,4 +425,67 @@ public class RedSocial {
     }
 
 
+    public String obtenerTotalUsuarios() {
+        return String.valueOf(usuarios.size());
+    }
+
+    public String obtenerTotalContenidos() {
+        return String.valueOf(arbolContenidos.obtenerTodosEnOrden().size());
+    }
+
+    public String obtenerTotalSolicitudes() {
+        return String.valueOf(colaSolicitudes.size());
+    }
+
+    public List<String> obtenerGruposEstudio(String userId) {
+        List<String> gruposEstudio = new ArrayList<>();
+        for (GrupoEstudio grupo : utilRed.obtenerGrupos()) {
+            if (grupo.getIdMiembros().contains(userId)) {
+                gruposEstudio.add(grupo.getNombre());
+            }
+        }
+        return gruposEstudio;
+    }
+
+    public String obtenerTotalContenidosUsuario(String userId) {
+        List<Contenido> contenidos = obtenerContenidosPorEstudiante(userId);
+        return String.valueOf(contenidos.size());
+    }
+
+    public String obtenerTotalSolicitudesUsuario(String userId) {
+        List<SolicitudAyuda> solicitudes = new ArrayList<>();
+        for (SolicitudAyuda solicitud : colaSolicitudes) {
+            if (solicitud.getSolicitanteId().equals(userId)) {
+                solicitudes.add(solicitud);
+            }
+        }
+        return String.valueOf(solicitudes.size());
+    }
+
+    public List<Contenido> obtenerTodosContenidos() {
+        return arbolContenidos.obtenerTodosEnOrden();
+    }
+
+    public boolean crearSolicitud(SolicitudAyuda solicitud1) {
+        // Validar la solicitud
+        if (solicitud1 == null || solicitud1.getSolicitanteId() == null) {
+            throw new IllegalArgumentException("La solicitud o el ID del solicitante no pueden ser nulos");
+        }
+
+        // Agregar la solicitud a la cola
+        colaSolicitudes.add(solicitud1);
+        utilRed.guardarSolicitud(solicitud1);
+        return true;
+    }
+
+    public List<SolicitudAyuda> obtenerTodasSolicitudes() {
+        List<SolicitudAyuda> solicitudes = new ArrayList<>();
+        while (!colaSolicitudes.isEmpty()) {
+            SolicitudAyuda solicitud = colaSolicitudes.poll();
+            if (solicitud != null) {
+                solicitudes.add(solicitud);
+            }
+        }
+        return solicitudes;
+    }
 }

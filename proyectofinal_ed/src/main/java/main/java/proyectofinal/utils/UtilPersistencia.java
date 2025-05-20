@@ -591,7 +591,8 @@ public class UtilPersistencia {
 
     private Contenido parsearContenido(String csv) {
         String[] partes = csv.split("§");
-        if (partes.length < 7) return null;
+        // Ahora necesitamos 9 partes porque agregamos 'contenido' y 'valoraciones'
+        if (partes.length < 8) return null;  // Cambiado de 7 a 8
 
         String id = partes[0];
         String titulo = partes[1];
@@ -600,18 +601,29 @@ public class UtilPersistencia {
         TipoContenido tipo = TipoContenido.valueOf(partes[4]);
         String descripcion = partes[5];
         String tema = partes[6];
+        String contenido = partes[7];  // Nuevo campo
 
-        Contenido contenido = new Contenido(id, titulo, autor, fecha, tipo, descripcion, tema);
-
-        if (partes.length > 7 && !partes[7].isEmpty()) {
-            LinkedList<Valoracion> valoraciones = Arrays.stream(partes[7].split("\\|"))
+        // Parsear valoraciones (si existen)
+        LinkedList<Valoracion> valoraciones = new LinkedList<>();
+        if (partes.length > 8 && !partes[8].isEmpty()) {
+            valoraciones = Arrays.stream(partes[8].split("\\|"))
                     .filter(s -> !s.isEmpty())
                     .map(this::parseValoracion)
                     .collect(Collectors.toCollection(LinkedList::new));
-            contenido.setValoraciones(valoraciones);
         }
 
-        return contenido;
+        // Usar el constructor actualizado
+        return new Contenido(
+                id,
+                titulo,
+                autor,
+                fecha,
+                tipo,
+                descripcion,
+                tema,
+                contenido,  // Nuevo campo
+                valoraciones
+        );
     }
 
     private Valoracion parseValoracion(String valoracionStr) {

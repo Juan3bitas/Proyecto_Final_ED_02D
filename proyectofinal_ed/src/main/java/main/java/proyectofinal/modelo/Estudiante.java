@@ -179,5 +179,14 @@ public String crearGrupo(String nombreGrupo, String descripcion) throws Operacio
 }
 
 
-    
+    public void eliminarContenido(String id) throws OperacionFallidaException {
+        if (id == null || id.trim().isEmpty()) {
+            throw new IllegalArgumentException("El ID del contenido no puede ser nulo o vacío");
+        }
+        if (!idsContenidosPublicados.contains(id)) {
+            throw new IllegalArgumentException("El ID del contenido no está en la lista de contenidos publicados");
+        }
+        idsContenidosPublicados.remove(id);
+        utilEstudiante.eliminarContenido(id);
+    }
 }

@@ -100,5 +100,8 @@ public class Valoracion {
             idValoracion, tema, valor, idAutor
         );
     }
-    
+
+    public String getUsuarioId() {
+        return idAutor;
+    }
 }

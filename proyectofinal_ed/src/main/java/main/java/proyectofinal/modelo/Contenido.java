@@ -20,17 +20,33 @@ public class Contenido {
     private TipoContenido tipo;
     private String tema;
     private String descripcion;
+    private String contenido;
     private LinkedList<Valoracion> valoraciones;
 
-    public Contenido(String id, String titulo, String autor, LocalDateTime fecha, TipoContenido tipo,String descripcion, String tema) {
+    /**
+     * Constructor completo para Contenido educativo
+     * @param id ID único (si es null o vacío, se genera uno)
+     * @param titulo Título del contenido (no null)
+     * @param autor Nombre del autor (no null)
+     * @param fecha Fecha de publicación (no null)
+     * @param tipo Tipo de contenido (no null)
+     * @param descripcion Descripción detallada (no null)
+     * @param tema Área de conocimiento (no null)
+     * @param contenido Ruta/URL del contenido (no null)
+     * @param valoraciones Lista de valoraciones (si es null, se crea una lista vacía)
+     */
+    public Contenido(String id, String titulo, String autor, LocalDateTime fecha,
+                     TipoContenido tipo, String descripcion, String tema,
+                     String contenido, LinkedList<Valoracion> valoraciones) {
         this.id = (id == null || id.isEmpty()) ? UtilId.generarIdAleatorio() : id;
         this.titulo = Objects.requireNonNull(titulo, "El título no puede ser nulo");
         this.autor = Objects.requireNonNull(autor, "El autor no puede ser nulo");
         this.fecha = Objects.requireNonNull(fecha, "La fecha no puede ser nula");
         this.tipo = Objects.requireNonNull(tipo, "El tipo no puede ser nulo");
+        this.descripcion = Objects.requireNonNull(descripcion, "La descripción no puede ser nula");
         this.tema = Objects.requireNonNull(tema, "El tema no puede ser nulo");
-        this.descripcion = Objects.requireNonNull(tema, "La descripcion no puede ser nulo");
-        this.valoraciones = new LinkedList<>();
+        this.contenido = Objects.requireNonNull(contenido, "El contenido no puede ser nulo");
+        this.valoraciones = (valoraciones != null) ? valoraciones : new LinkedList<>();
     }
 
     //getters and setters
@@ -92,6 +108,14 @@ public class Contenido {
         this.tema = tema;
     }
 
+    public String getContenido() {
+        return contenido;
+    }
+
+    public void setContenido(String contenido) {
+        this.contenido = Objects.requireNonNull(contenido, "El contenido no puede ser nulo");
+    }
+
     public LinkedList<Valoracion> getValoraciones() {
         return this.valoraciones;
     }
@@ -118,14 +142,16 @@ public class Contenido {
 
     @Override
     public String toString() {
-    return "Contenido{" +
-            "id='" + id + '\'' +
-            ", titulo='" + titulo + '\'' +
-            ", autor='" + autor + '\'' +
-            ", fecha=" + fecha +
-            ", tipo='" + tipo + '\'' +
-            ", tema='" + tema + '\'' +
-            '}';
+        return "Contenido{" +
+                "id='" + id + '\'' +
+                ", titulo='" + titulo + '\'' +
+                ", autor='" + autor + '\'' +
+                ", fecha=" + fecha +
+                ", tipo=" + tipo +
+                ", tema='" + tema + '\'' +
+                ", descripcion='" + descripcion + '\'' +
+                ", contenido='" + contenido + '\'' +
+                '}';
     }
 
     @Override

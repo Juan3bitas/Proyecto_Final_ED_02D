@@ -668,3 +668,519 @@ may 16, 2025 9:49:49 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
 DETALLADO: Guardando usuarios en: persistencia/archivos/Usuarios.txt
 may 16, 2025 9:49:49 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
 INFORMACIÓN: Usuario eliminado: 76219032
+may 17, 2025 10:33:42 A. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: ✅ UtilPersistencia instanciada.
+may 17, 2025 10:33:42 A. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: ✅ Datos iniciales cargados correctamente.
+may 17, 2025 10:33:42 A. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Obteniendo todos los usuarios
+may 17, 2025 10:33:42 A. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Obteniendo todos los usuarios
+may 17, 2025 10:33:42 A. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Obteniendo todos los contenidos
+may 17, 2025 10:33:42 A. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Obteniendo todos los grupos
+may 17, 2025 10:38:14 A. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Buscando usuario por correo: sara@gmail.com
+may 17, 2025 10:38:14 A. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Intentando guardar usuario: Valentina Acosta
+may 17, 2025 10:38:14 A. M. main.java.proyectofinal.utils.UtilLog escribirLog
+DETALLADO: Guardando usuarios en: persistencia/archivos/Usuarios.txt
+may 17, 2025 10:38:14 A. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Usuario guardado exitosamente: 91205743
+may 17, 2025 10:38:14 A. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Nuevo usuario registrado: sara@gmail.com
+may 17, 2025 10:38:47 A. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Buscando usuario por correo: sara@gmail.com
+may 17, 2025 10:38:57 A. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Actualizando estudiante: Valentina Acosta
+may 17, 2025 10:38:57 A. M. main.java.proyectofinal.utils.UtilLog escribirLog
+DETALLADO: Guardando usuarios en: persistencia/archivos/Usuarios.txt
+may 17, 2025 10:38:57 A. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Estudiante actualizado: 91205743
+may 17, 2025 10:40:11 A. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Buscando usuario por correo: sara@gmail.com
+may 17, 2025 10:40:20 A. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Buscando usuario por correo: lisa@gmail.com
+may 17, 2025 10:40:20 A. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Intentando guardar usuario: Lisa
+may 17, 2025 10:40:20 A. M. main.java.proyectofinal.utils.UtilLog escribirLog
+DETALLADO: Guardando usuarios en: persistencia/archivos/Usuarios.txt
+may 17, 2025 10:40:20 A. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Usuario guardado exitosamente: 90040954
+may 17, 2025 10:40:20 A. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Nuevo usuario registrado: lisa@gmail.com
+may 17, 2025 10:41:14 A. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Buscando usuario por correo: lisa@gmail.com
+may 17, 2025 11:04:06 A. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: ✅ UtilPersistencia instanciada.
+may 17, 2025 11:04:06 A. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: ✅ Datos iniciales cargados correctamente.
+may 17, 2025 11:04:06 A. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Obteniendo todos los usuarios
+may 17, 2025 11:04:06 A. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Obteniendo todos los usuarios
+may 17, 2025 11:04:06 A. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Obteniendo todos los contenidos
+may 17, 2025 11:04:06 A. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Obteniendo todos los grupos
+may 17, 2025 11:31:52 A. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: ✅ UtilPersistencia instanciada.
+may 17, 2025 11:31:52 A. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: ✅ Datos iniciales cargados correctamente.
+may 17, 2025 11:31:52 A. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Obteniendo todos los usuarios
+may 17, 2025 11:31:52 A. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Obteniendo todos los usuarios
+may 17, 2025 11:31:52 A. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Obteniendo todos los contenidos
+may 17, 2025 11:31:52 A. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Obteniendo todos los grupos
+may 17, 2025 11:33:47 A. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Buscando usuario por correo: lisa@gmail.com
+may 18, 2025 10:20:53 A. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: ✅ UtilPersistencia instanciada.
+may 18, 2025 10:20:53 A. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: ✅ Datos iniciales cargados correctamente.
+may 18, 2025 10:20:53 A. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Obteniendo todos los usuarios
+may 18, 2025 10:20:53 A. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Obteniendo todos los usuarios
+may 18, 2025 10:20:53 A. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Obteniendo todos los contenidos
+may 18, 2025 10:20:53 A. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Obteniendo todos los grupos
+may 18, 2025 10:22:21 A. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Buscando usuario por correo: juan@gmail.com
+may 18, 2025 10:22:21 A. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Intentando guardar usuario: Juan Carlos
+may 18, 2025 10:22:21 A. M. main.java.proyectofinal.utils.UtilLog escribirLog
+DETALLADO: Guardando usuarios en: persistencia/archivos/Usuarios.txt
+may 18, 2025 10:22:21 A. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Usuario guardado exitosamente: 68121334
+may 18, 2025 10:22:21 A. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Nuevo usuario registrado: juan@gmail.com
+may 18, 2025 10:22:42 A. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Buscando usuario por correo: juan@gmail.com
+may 18, 2025 10:22:51 A. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Actualizando estudiante: Juan Carlos
+may 18, 2025 10:22:51 A. M. main.java.proyectofinal.utils.UtilLog escribirLog
+DETALLADO: Guardando usuarios en: persistencia/archivos/Usuarios.txt
+may 18, 2025 10:22:51 A. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Estudiante actualizado: 68121334
+may 18, 2025 10:22:55 A. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Eliminando usuario: 68121334
+may 18, 2025 10:22:55 A. M. main.java.proyectofinal.utils.UtilLog escribirLog
+DETALLADO: Guardando usuarios en: persistencia/archivos/Usuarios.txt
+may 18, 2025 10:22:55 A. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Usuario eliminado: 68121334
+may 18, 2025 10:23:09 A. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Buscando usuario por correo: juan@gmail.com
+may 18, 2025 10:23:18 A. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Buscando usuario por correo: lisa@gmail.com
+may 18, 2025 10:31:57 A. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Buscando usuario por correo: lisa@gmail.com
+may 18, 2025 10:32:58 A. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Buscando usuario por correo: lisa@gmail.com
+may 18, 2025 10:35:27 A. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Buscando usuario por correo: lisa@gmail.com
+may 18, 2025 11:11:46 A. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: ✅ UtilPersistencia instanciada.
+may 18, 2025 11:11:47 A. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: ✅ Datos iniciales cargados correctamente.
+may 18, 2025 11:11:47 A. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Obteniendo todos los usuarios
+may 18, 2025 11:11:47 A. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Obteniendo todos los usuarios
+may 18, 2025 11:11:47 A. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Obteniendo todos los contenidos
+may 18, 2025 11:11:47 A. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Obteniendo todos los grupos
+may 18, 2025 11:12:09 A. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Buscando usuario por correo: lisa@gmail.com
+may 18, 2025 11:15:21 A. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: ✅ UtilPersistencia instanciada.
+may 18, 2025 11:15:21 A. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: ✅ Datos iniciales cargados correctamente.
+may 18, 2025 11:15:21 A. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Obteniendo todos los usuarios
+may 18, 2025 11:15:21 A. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Obteniendo todos los usuarios
+may 18, 2025 11:15:21 A. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Obteniendo todos los contenidos
+may 18, 2025 11:15:21 A. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Obteniendo todos los grupos
+may 18, 2025 11:15:39 A. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Buscando usuario por correo: lisa@gmail.com
+may 18, 2025 11:20:22 A. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: ✅ UtilPersistencia instanciada.
+may 18, 2025 11:20:22 A. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: ✅ Datos iniciales cargados correctamente.
+may 18, 2025 11:20:22 A. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Obteniendo todos los usuarios
+may 18, 2025 11:20:22 A. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Obteniendo todos los usuarios
+may 18, 2025 11:20:22 A. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Obteniendo todos los contenidos
+may 18, 2025 11:20:22 A. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Obteniendo todos los grupos
+may 18, 2025 11:20:37 A. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Buscando usuario por correo: lisa@gmail.com
+may 18, 2025 11:20:40 A. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Obteniendo todos los grupos
+may 18, 2025 1:47:27 A. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: ✅ UtilPersistencia instanciada.
+may 18, 2025 1:47:28 A. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: ✅ Datos iniciales cargados correctamente.
+may 18, 2025 1:47:28 A. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Obteniendo todos los usuarios
+may 18, 2025 1:47:28 A. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Obteniendo todos los usuarios
+may 18, 2025 1:47:28 A. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Obteniendo todos los contenidos
+may 18, 2025 1:47:28 A. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Obteniendo todos los grupos
+may 18, 2025 1:48:45 A. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Buscando usuario por correo: lisa@gmail.com
+may 18, 2025 1:48:48 A. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Obteniendo todos los grupos
+may 18, 2025 2:15:04 A. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: ✅ UtilPersistencia instanciada.
+may 18, 2025 2:15:04 A. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: ✅ Datos iniciales cargados correctamente.
+may 18, 2025 2:15:04 A. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Obteniendo todos los usuarios
+may 18, 2025 2:15:04 A. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Obteniendo todos los usuarios
+may 18, 2025 2:15:05 A. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Obteniendo todos los contenidos
+may 18, 2025 2:15:05 A. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Obteniendo todos los grupos
+may 18, 2025 2:25:13 A. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Buscando usuario por correo: lisa@gmail.com
+may 18, 2025 2:25:54 A. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Obteniendo todos los grupos
+may 18, 2025 2:29:11 A. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Buscando usuario por correo: lisa@gmail.com
+may 18, 2025 2:29:26 A. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Obteniendo todos los grupos
+may 18, 2025 2:41:11 A. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Buscando usuario por correo: lisa@gmail.com
+may 18, 2025 2:41:15 A. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Obteniendo todos los grupos
+may 19, 2025 11:28:08 A. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: ✅ UtilPersistencia instanciada.
+may 19, 2025 11:28:08 A. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: ✅ Datos iniciales cargados correctamente.
+may 19, 2025 11:28:08 A. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Obteniendo todos los usuarios
+may 19, 2025 11:28:08 A. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Obteniendo todos los usuarios
+may 19, 2025 11:28:08 A. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Obteniendo todos los contenidos
+may 19, 2025 11:28:08 A. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Obteniendo todos los grupos
+may 19, 2025 11:28:49 A. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Buscando usuario por correo: lisa@gmail.com
+may 19, 2025 11:28:53 A. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Obteniendo todos los grupos
+may 19, 2025 11:51:42 A. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: ✅ UtilPersistencia instanciada.
+may 19, 2025 11:51:42 A. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: ✅ Datos iniciales cargados correctamente.
+may 19, 2025 11:51:42 A. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Obteniendo todos los usuarios
+may 19, 2025 11:51:42 A. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Obteniendo todos los usuarios
+may 19, 2025 11:51:42 A. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Obteniendo todos los contenidos
+may 19, 2025 11:51:42 A. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Obteniendo todos los grupos
+may 19, 2025 11:51:58 A. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Buscando usuario por correo: lisa@gmail.com
+may 19, 2025 11:52:01 A. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Obteniendo todos los grupos
+may 19, 2025 12:00:59 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: ✅ UtilPersistencia instanciada.
+may 19, 2025 12:00:59 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: ✅ Datos iniciales cargados correctamente.
+may 19, 2025 12:00:59 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Obteniendo todos los usuarios
+may 19, 2025 12:00:59 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Obteniendo todos los usuarios
+may 19, 2025 12:00:59 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Obteniendo todos los contenidos
+may 19, 2025 12:00:59 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Obteniendo todos los grupos
+may 19, 2025 12:15:02 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Buscando usuario por correo: lisa@gmail.com
+may 19, 2025 12:15:12 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Buscando usuario por correo: lisa@gmail.com
+may 19, 2025 12:15:15 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Obteniendo todos los grupos
+may 19, 2025 12:18:06 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: ✅ UtilPersistencia instanciada.
+may 19, 2025 12:18:06 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: ✅ Datos iniciales cargados correctamente.
+may 19, 2025 12:18:06 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Obteniendo todos los usuarios
+may 19, 2025 12:18:06 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Obteniendo todos los usuarios
+may 19, 2025 12:18:06 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Obteniendo todos los contenidos
+may 19, 2025 12:18:06 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Obteniendo todos los grupos
+may 19, 2025 12:18:21 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Buscando usuario por correo: lisa@gmail.com
+may 19, 2025 12:18:24 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Obteniendo todos los grupos
+may 19, 2025 12:42:52 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: ✅ UtilPersistencia instanciada.
+may 19, 2025 12:42:52 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: ✅ Datos iniciales cargados correctamente.
+may 19, 2025 12:42:52 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Obteniendo todos los usuarios
+may 19, 2025 12:42:52 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Obteniendo todos los usuarios
+may 19, 2025 12:42:52 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Obteniendo todos los contenidos
+may 19, 2025 12:42:52 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Obteniendo todos los grupos
+may 19, 2025 12:43:18 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Buscando usuario por correo: lisa@gmail.com
+may 19, 2025 12:43:21 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Obteniendo todos los grupos
+may 19, 2025 12:44:02 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Actualizando estudiante: Lisa
+may 19, 2025 12:44:02 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+DETALLADO: Guardando usuarios en: persistencia/archivos/Usuarios.txt
+may 19, 2025 12:44:02 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Estudiante actualizado: 90040954
+may 19, 2025 12:44:02 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Guardando contenido: Titulo de publicacion
+may 19, 2025 12:45:31 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Buscando usuario por correo: lisa@gmail.com
+may 19, 2025 12:45:34 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Obteniendo todos los grupos
+may 19, 2025 12:54:03 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Buscando usuario por correo: lisa@gmail.com
+may 19, 2025 6:43:22 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: ✅ UtilPersistencia instanciada.
+may 19, 2025 6:43:22 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: ✅ Datos iniciales cargados correctamente.
+may 19, 2025 6:43:22 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Obteniendo todos los usuarios
+may 19, 2025 6:43:22 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Obteniendo todos los usuarios
+may 19, 2025 6:43:22 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Obteniendo todos los contenidos
+may 19, 2025 6:43:22 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Obteniendo todos los grupos
+may 19, 2025 6:47:01 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Buscando usuario por correo: lisa@gmail.com
+may 19, 2025 6:47:17 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Obteniendo todos los grupos
+may 19, 2025 7:36:27 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Buscando usuario por correo: lisa@gmail.com
+may 19, 2025 8:36:31 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: ✅ UtilPersistencia instanciada.
+may 19, 2025 8:36:31 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: ✅ Datos iniciales cargados correctamente.
+may 19, 2025 8:36:31 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Obteniendo todos los usuarios
+may 19, 2025 8:36:31 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Obteniendo todos los usuarios
+may 19, 2025 8:36:31 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Obteniendo todos los contenidos
+may 19, 2025 8:36:31 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Obteniendo todos los grupos
+may 19, 2025 8:36:44 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Buscando usuario por correo: lisa@gmail.com
+may 19, 2025 8:38:22 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Buscando usuario por correo: lisa@gmail.com
+may 19, 2025 8:41:44 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Buscando usuario por correo: lisa@gmail.com
+may 19, 2025 8:41:47 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Obteniendo todos los grupos
+may 20, 2025 11:52:23 A. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: ✅ UtilPersistencia instanciada.
+may 20, 2025 11:52:23 A. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: ✅ Datos iniciales cargados correctamente.
+may 20, 2025 11:52:23 A. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Obteniendo todos los usuarios
+may 20, 2025 11:52:23 A. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Obteniendo todos los usuarios
+may 20, 2025 11:52:23 A. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Obteniendo todos los contenidos
+may 20, 2025 11:52:23 A. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Obteniendo todos los grupos
+may 20, 2025 11:53:01 A. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Buscando usuario por correo: lisa@gmail.com
+may 20, 2025 12:42:55 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: ✅ UtilPersistencia instanciada.
+may 20, 2025 12:42:55 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: ✅ Datos iniciales cargados correctamente.
+may 20, 2025 12:42:55 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Obteniendo todos los usuarios
+may 20, 2025 12:42:55 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Obteniendo todos los usuarios
+may 20, 2025 12:42:55 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Obteniendo todos los contenidos
+may 20, 2025 12:42:55 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Obteniendo todos los grupos
+may 20, 2025 12:46:19 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: ✅ UtilPersistencia instanciada.
+may 20, 2025 12:46:19 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: ✅ Datos iniciales cargados correctamente.
+may 20, 2025 12:46:19 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Obteniendo todos los usuarios
+may 20, 2025 12:46:19 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Obteniendo todos los usuarios
+may 20, 2025 12:46:19 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Obteniendo todos los contenidos
+may 20, 2025 12:46:19 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Obteniendo todos los grupos
+may 20, 2025 12:47:00 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Buscando usuario por correo: lisa@gmail.com
+may 20, 2025 1:04:29 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: ✅ UtilPersistencia instanciada.
+may 20, 2025 1:04:29 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: ✅ Datos iniciales cargados correctamente.
+may 20, 2025 1:04:29 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Obteniendo todos los usuarios
+may 20, 2025 1:04:29 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Obteniendo todos los usuarios
+may 20, 2025 1:04:29 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Obteniendo todos los contenidos
+may 20, 2025 1:04:29 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Obteniendo todos los grupos
+may 20, 2025 1:04:58 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Buscando usuario por correo: lisa@gmail.com
+may 20, 2025 1:10:23 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: ✅ UtilPersistencia instanciada.
+may 20, 2025 1:10:23 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: ✅ Datos iniciales cargados correctamente.
+may 20, 2025 1:10:23 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Obteniendo todos los usuarios
+may 20, 2025 1:10:23 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Obteniendo todos los usuarios
+may 20, 2025 1:10:23 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Obteniendo todos los contenidos
+may 20, 2025 1:10:23 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Obteniendo todos los grupos
+may 20, 2025 1:10:52 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Buscando usuario por correo: lisa@gmail.com
+may 20, 2025 1:10:53 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Obteniendo todos los contenidos
+may 20, 2025 2:16:53 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: ✅ UtilPersistencia instanciada.
+may 20, 2025 2:16:53 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: ✅ Datos iniciales cargados correctamente.
+may 20, 2025 2:16:53 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Obteniendo todos los usuarios
+may 20, 2025 2:16:53 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Obteniendo todos los usuarios
+may 20, 2025 2:16:53 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Obteniendo todos los contenidos
+may 20, 2025 2:16:53 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Obteniendo todos los grupos
+may 20, 2025 2:17:13 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Buscando usuario por correo: lisa@gmail.com
+may 20, 2025 2:17:14 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Obteniendo todos los contenidos
+may 20, 2025 2:17:38 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Obteniendo todos los contenidos
+may 20, 2025 2:17:41 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Obteniendo todos los grupos
+may 20, 2025 2:18:43 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Buscando usuario por correo: lisa@gmail.com
+may 20, 2025 2:18:44 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Obteniendo todos los contenidos
+may 20, 2025 2:35:49 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: ✅ UtilPersistencia instanciada.
+may 20, 2025 2:35:49 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: ✅ Datos iniciales cargados correctamente.
+may 20, 2025 2:35:49 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Obteniendo todos los usuarios
+may 20, 2025 2:35:49 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Obteniendo todos los usuarios
+may 20, 2025 2:35:49 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Obteniendo todos los contenidos
+may 20, 2025 2:35:49 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Obteniendo todos los grupos
+may 20, 2025 2:36:20 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Buscando usuario por correo: lisa@gmail.com
+may 20, 2025 2:36:21 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Obteniendo todos los contenidos
+may 20, 2025 2:38:13 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Buscando usuario por correo: lisa@gmail.com
+may 20, 2025 2:38:14 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Obteniendo todos los contenidos
+may 20, 2025 2:38:17 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Obteniendo todos los grupos
+may 20, 2025 2:41:08 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Buscando usuario por correo: lisa@gmail.com
+may 20, 2025 2:41:09 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Obteniendo todos los contenidos
+may 20, 2025 2:41:12 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Obteniendo todos los grupos
+may 20, 2025 2:43:43 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Buscando usuario por correo: lisa@gmail.com
+may 20, 2025 2:43:44 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Obteniendo todos los contenidos
+may 20, 2025 2:43:46 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Obteniendo todos los grupos
+may 20, 2025 3:09:18 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: ✅ UtilPersistencia instanciada.
+may 20, 2025 3:09:18 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: ✅ Datos iniciales cargados correctamente.
+may 20, 2025 3:09:18 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Obteniendo todos los usuarios
+may 20, 2025 3:09:18 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Obteniendo todos los usuarios
+may 20, 2025 3:09:19 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Obteniendo todos los contenidos
+may 20, 2025 3:09:19 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Obteniendo todos los grupos
+may 20, 2025 3:09:37 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Buscando usuario por correo: lisa@gmail.com
+may 20, 2025 3:09:37 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Obteniendo todos los contenidos
+may 20, 2025 3:09:41 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Obteniendo todos los grupos
+may 20, 2025 3:10:00 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Guardando solicitud: Titulo
+may 20, 2025 3:10:43 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Buscando usuario por correo: lisa@gmail.com
+may 20, 2025 3:10:44 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Obteniendo todos los contenidos
+may 20, 2025 3:10:50 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Obteniendo todos los grupos
+may 20, 2025 3:15:08 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Buscando usuario por correo: lisa@gmail.com
+may 20, 2025 3:15:09 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Obteniendo todos los contenidos
+may 20, 2025 3:15:11 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Obteniendo todos los grupos
+may 20, 2025 3:16:19 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Buscando usuario por correo: admin@gmail.com
+may 20, 2025 3:16:19 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Intentando guardar usuario: Admin1
+may 20, 2025 3:16:19 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+DETALLADO: Guardando usuarios en: persistencia/archivos/Usuarios.txt
+may 20, 2025 3:16:19 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Usuario guardado exitosamente: 58367005
+may 20, 2025 3:16:19 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Nuevo usuario registrado: admin@gmail.com
+may 20, 2025 3:21:49 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Buscando usuario por correo: lisa@gmail.com
+may 20, 2025 3:21:50 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Obteniendo todos los contenidos
+may 20, 2025 3:21:57 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Obteniendo todos los grupos
+may 20, 2025 3:22:23 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Buscando usuario por correo: admin@gmail.com
+may 20, 2025 3:22:24 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Obteniendo todos los contenidos
+may 20, 2025 3:22:27 P. M. main.java.proyectofinal.utils.UtilLog escribirLog
+INFORMACIÓN: Obteniendo todos los grupos
