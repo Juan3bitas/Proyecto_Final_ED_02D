@@ -14,6 +14,12 @@ public class ArbolContenidos {
         this.comparador = crearComparador(criterio);
     }
 
+    public void inicializarConLista(List<Contenido> contenidos) {
+        if (contenidos != null && !contenidos.isEmpty()) {
+            contenidos.forEach(this::insertar);
+        }
+    }
+
     private Comparator<Contenido> crearComparador(CriterioOrden criterio) {
         Objects.requireNonNull(criterio, "El criterio de orden no puede ser nulo");
         
@@ -68,6 +74,27 @@ public class ArbolContenidos {
             nodo = nodo.izquierdo;
         }
         return nodo;
+    }
+
+    public Contenido buscarPorId(String contenidoId) {
+        return buscarPorIdRec(raiz, contenidoId);
+    }
+
+    private Contenido buscarPorIdRec(NodoContenido raiz, String contenidoId) {
+        if (raiz == null) {
+            return null;
+        }
+
+        if (raiz.contenido.getId().equals(contenidoId)) {
+            return raiz.contenido;
+        }
+
+        Contenido resultadoIzquierdo = buscarPorIdRec(raiz.izquierdo, contenidoId);
+        if (resultadoIzquierdo != null) {
+            return resultadoIzquierdo;
+        }
+
+        return buscarPorIdRec(raiz.derecho, contenidoId);
     }
 
 
@@ -138,8 +165,10 @@ public class ArbolContenidos {
     }
 
 
-    public List<Contenido> obtenerTodosEnOrden() {
-        List<Contenido> contenidos = new ArrayList<>();
+    public List<Contenido> obtenerTodosEnOrden(List<Contenido> contenidos) {
+        if (contenidos == null) {
+            contenidos = new ArrayList<>();
+        }
         inorden(raiz, contenidos);
         return contenidos;
     }

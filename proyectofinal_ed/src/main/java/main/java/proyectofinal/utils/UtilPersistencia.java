@@ -132,14 +132,40 @@ public class UtilPersistencia {
     public Contenido buscarContenidoPorId(String contId) {
         try {
             utilLog.escribirLog("Buscando contenido por ID: " + contId, Level.INFO);
-            return listaContenidosCache.stream()
+
+            // Buscar en cache
+            Contenido contenido = listaContenidosCache.stream()
                     .filter(c -> c.getId().equals(contId))
                     .findFirst()
                     .orElse(null);
+
+            if (contenido != null) {
+                // Cargar valoraciones si no están cargadas
+                if (contenido.getValoraciones() == null) {
+                    contenido.setValoraciones(cargarValoracionesDesdePersistencia(contId));
+                }
+            }
+
+            return contenido;
         } catch (Exception e) {
             utilLog.escribirLog("Error buscando contenido: " + e.getMessage(), Level.SEVERE);
             return null;
         }
+    }
+
+    private LinkedList<Valoracion> cargarValoracionesDesdePersistencia(String contenidoId) {
+        return listaContenidosCache.stream()
+                .filter(c -> c.getId().equals(contenidoId))
+                .findFirst()
+                .map(Contenido::getValoraciones)
+                .map(valoraciones -> {
+                    if (valoraciones instanceof LinkedList) {
+                        return (LinkedList<Valoracion>) valoraciones;
+                    } else {
+                        return new LinkedList<>(valoraciones); // Convertir a LinkedList si no lo es
+                    }
+                })
+                .orElse(new LinkedList<>()); // Retorna LinkedList vacía por defecto
     }
 
     public List<Contenido> buscarContenidoPorAutor(String autorId) {
@@ -573,57 +599,114 @@ public class UtilPersistencia {
 
     private void cargarContenidos() {
         String ruta = utilProperties.obtenerPropiedad("rutaContenidos.txt");
+        System.out.println("🔄 Intentando cargar contenidos desde: " + ruta);
+
         File archivo = new File(ruta);
-        if (!archivo.exists()) return;
+        if (!archivo.exists()) {
+            System.out.println("❌ El archivo no existe en la ruta especificada");
+            return;
+        }
+        if (!archivo.canRead()) {
+            System.out.println("❌ El archivo existe pero no se puede leer");
+            return;
+        }
 
         try (BufferedReader reader = new BufferedReader(new FileReader(ruta))) {
+            System.out.println("📂 Archivo abierto correctamente");
             String linea;
+            int contador = 0;
+
             while ((linea = reader.readLine()) != null) {
+                contador++;
+                System.out.println("\n📝 Línea " + contador + " leída: " + linea);
+
                 Contenido contenido = parsearContenido(linea);
                 if (contenido != null) {
+                    System.out.println("✅ Contenido parseado correctamente:");
+                    System.out.println("   ID: " + contenido.getId());
+                    System.out.println("   Título: " + contenido.getTitulo());
+                    System.out.println("   Autor: " + contenido.getAutor());
+                    System.out.println("   Tipo: " + contenido.getTipo());
                     listaContenidosCache.add(contenido);
+                } else {
+                    System.out.println("❌ No se pudo parsear el contenido de esta línea");
                 }
             }
+
+            System.out.println("\n=================================");
+            System.out.println("📊 Resumen de carga:");
+            System.out.println("Total líneas leídas: " + contador);
+            System.out.println("Contenidos cargados: " + listaContenidosCache.size());
+            System.out.println("=================================");
+
         } catch (IOException e) {
+            System.out.println("🔥 Error crítico al leer el archivo:");
+            e.printStackTrace();
             utilLog.escribirLog("Error cargando contenidos: " + e.getMessage(), Level.SEVERE);
         }
     }
 
     private Contenido parsearContenido(String csv) {
-        String[] partes = csv.split("§");
-        // Ahora necesitamos 9 partes porque agregamos 'contenido' y 'valoraciones'
-        if (partes.length < 8) return null;  // Cambiado de 7 a 8
-
-        String id = partes[0];
-        String titulo = partes[1];
-        String autor = partes[2];
-        LocalDateTime fecha = LocalDateTime.parse(partes[3]);
-        TipoContenido tipo = TipoContenido.valueOf(partes[4]);
-        String descripcion = partes[5];
-        String tema = partes[6];
-        String contenido = partes[7];  // Nuevo campo
-
-        // Parsear valoraciones (si existen)
-        LinkedList<Valoracion> valoraciones = new LinkedList<>();
-        if (partes.length > 8 && !partes[8].isEmpty()) {
-            valoraciones = Arrays.stream(partes[8].split("\\|"))
-                    .filter(s -> !s.isEmpty())
-                    .map(this::parseValoracion)
-                    .collect(Collectors.toCollection(LinkedList::new));
+        // Verificar si la línea está vacía
+        if (csv == null || csv.trim().isEmpty()) {
+            System.out.println("⚠️ Línea vacía encontrada");
+            return null;
         }
 
-        // Usar el constructor actualizado
-        return new Contenido(
-                id,
-                titulo,
-                autor,
-                fecha,
-                tipo,
-                descripcion,
-                tema,
-                contenido,  // Nuevo campo
-                valoraciones
-        );
+        String[] partes = csv.split("§");
+
+        // Verificar que tenemos al menos los 8 campos obligatorios
+        if (partes.length < 8) {
+            System.out.println("❌ Formato incorrecto. Campos esperados: 8, encontrados: " + partes.length);
+            System.out.println("Línea problemática: " + csv);
+            return null;
+        }
+
+        try {
+            // Parsear campos obligatorios
+            String id = partes[0].trim();
+            String titulo = partes[1].trim();
+            String autor = partes[2].trim();
+            LocalDateTime fecha = LocalDateTime.parse(partes[3].trim());
+            TipoContenido tipo = TipoContenido.valueOf(partes[4].trim());
+            String descripcion = partes[5].trim();
+            String tema = partes[6].trim();
+            String contenidoStr = partes[7].trim(); // El contenido puede estar vacío pero no null
+
+            // Manejar valoraciones (campo opcional)
+            LinkedList<Valoracion> valoraciones = new LinkedList<>();
+            if (partes.length > 8 && !partes[8].trim().isEmpty()) {
+                valoraciones = Arrays.stream(partes[8].split("\\|"))
+                        .filter(s -> !s.trim().isEmpty())
+                        .map(this::parseValoracion)
+                        .filter(Objects::nonNull) // Filtrar valoraciones nulas
+                        .collect(Collectors.toCollection(LinkedList::new));
+            }
+
+            // Validar campos obligatorios no vacíos
+            if (id.isEmpty() || titulo.isEmpty() || autor.isEmpty() || descripcion.isEmpty() || tema.isEmpty()) {
+                System.out.println("❌ Campos obligatorios vacíos en línea: " + csv);
+                return null;
+            }
+
+            // Crear el objeto Contenido
+            return new Contenido(
+                    id,
+                    titulo,
+                    autor,
+                    fecha,
+                    tipo,
+                    descripcion,
+                    tema,
+                    contenidoStr, // Acepta cadena vacía pero no null
+                    valoraciones
+            );
+
+        } catch (Exception e) {
+            System.out.println("🔥 Error al parsear línea: " + csv);
+            System.out.println("Excepción: " + e.getClass().getSimpleName() + ": " + e.getMessage());
+            return null;
+        }
     }
 
     private Valoracion parseValoracion(String valoracionStr) {

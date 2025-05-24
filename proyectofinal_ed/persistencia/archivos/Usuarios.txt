@@ -1,3 +1,5 @@
 91205743,Valentina Acosta,sara@gmail.com,cont,false,0,Estudiante,Matemáticas; Física,
-90040954,Lisa,lisa@gmail.com,cont,false,0,Estudiante,Matemáticas,
 58367005,Admin1,admin@gmail.com,cont,false,0,Moderador,,
+90040954,Lisa,lisa@gmail.com,cont,false,0,Estudiante,Matemáticas,
+41221229,juan,juan@gmail.com,cont,false,0,Estudiante,,
+06157484,prueba,prueba@gmail.com,cont,false,0,Estudiante,,

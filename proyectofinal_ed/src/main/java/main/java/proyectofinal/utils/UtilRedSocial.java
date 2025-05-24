@@ -479,7 +479,9 @@ public class UtilRedSocial {
 
 
     public List<Contenido> obtenerContenidos() {
-        return utilPersistencia.obtenerTodosContenidos();
+        List<Contenido> contenidos = utilPersistencia.obtenerTodosContenidos();
+        System.out.println("Contenidos obtenidos de persistencia: " + contenidos.size());
+        return contenidos != null ? contenidos : new ArrayList<>();
     }
 
     public List<GrupoEstudio> obtenerGrupos() {
@@ -494,4 +496,24 @@ public class UtilRedSocial {
     }
 
 
+    public void guardarValoracion(String contenidoId, Valoracion valoracion) {
+        try {
+            Contenido contenido = this.buscarContenido(contenidoId);
+            if (contenido == null) {
+                utilLog.logWarning("Contenido no encontrado para guardar valoración: " + contenidoId);
+                return;
+            }
+
+            contenido.agregarValoracion(valoracion);
+            this.actualizarContenido(contenido);
+            utilLog.logInfo("Valoración guardada para el contenido: " + contenidoId);
+
+        } catch (Exception e) {
+            utilLog.logSevere("Error guardando valoración: " + e.getMessage());
+        }
+    }
+
+    public Contenido buscarContenidoPorId(String contenidoId) {
+        return utilPersistencia.buscarContenidoPorId(contenidoId);
+    }
 }

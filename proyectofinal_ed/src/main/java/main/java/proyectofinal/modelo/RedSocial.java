@@ -1,9 +1,9 @@
 package main.java.proyectofinal.modelo;
 
 import main.java.proyectofinal.excepciones.OperacionFallidaException;
+import main.java.proyectofinal.utils.UtilProperties;
 import main.java.proyectofinal.utils.UtilRedSocial;
 
-import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.*;
 
@@ -13,33 +13,47 @@ import java.util.*;
  * Centraliza la gestión de usuarios, contenidos, grupos y solicitudes de ayuda.
  */
 public class RedSocial {
-    private final String nombre = "AprendeJuntos"; // Nombre definido
+    // Constantes y atributos
+    private final String nombre = "AprendeJuntos";
     private final transient UtilRedSocial utilRed;
     private List<Usuario> usuarios;
     private ArbolContenidos arbolContenidos;
     private GrafoAfinidad grafoAfinidad;
     private PriorityQueue<SolicitudAyuda> colaSolicitudes;
 
+    // Constructor
     public RedSocial(UtilRedSocial utilRed) {
+        verificarArchivosPersistencia();
         this.utilRed = Objects.requireNonNull(utilRed, "UtilRedSocial no puede ser nulo");
         this.usuarios = utilRed.obtenerUsuarios() != null ? utilRed.obtenerUsuarios() : new ArrayList<>();
         this.arbolContenidos = new ArbolContenidos(CriterioOrden.TEMA);
         this.grafoAfinidad = new GrafoAfinidad();
         this.colaSolicitudes = new PriorityQueue<>(Comparator.comparingInt(s -> s.getUrgencia().ordinal()));
-
-        // Cargar datos iniciales
+        this.colaSolicitudes.addAll(utilRed.obtenerSolicitudes());
+        //this.arbolContenidos.inicializarConLista(utilRed.obtenerContenidos());
         cargarContenidosAlArbol();
         cargarRelacionesAfinidad();
     }
 
+    private void verificarArchivosPersistencia() {
+        UtilProperties utilProperties = UtilProperties.getInstance();
+        String[] archivos = {
+                utilProperties.obtenerPropiedad("rutaUsuarios.txt"),
+                utilProperties.obtenerPropiedad("rutaContenidos.txt"),
+                utilProperties.obtenerPropiedad("rutaSolicitudes.txt"),
+                utilProperties.obtenerPropiedad("rutaGruposEstudio.txt"), // Corregido el nombre
+                utilProperties.obtenerPropiedad("rutaReportes.txt")
+        };
+
+    }
+
+    // Métodos de inicialización
     private void cargarRelacionesAfinidad() {
-        // 1. Agregar todos los estudiantes como nodos
         usuarios.stream()
                 .filter(u -> u instanceof Estudiante)
                 .map(u -> (Estudiante) u)
                 .forEach(grafoAfinidad::agregarNodo);
 
-        // 2. Cargar relaciones desde persistencia (si existe)
         List<GrupoEstudio> grupos = utilRed.obtenerGrupos();
         if (grupos != null) {
             grupos.forEach(this::agregarRelacionesDeGrupo);
@@ -57,7 +71,6 @@ public class RedSocial {
                     Estudiante e1 = (Estudiante) u1;
                     Estudiante e2 = (Estudiante) u2;
 
-                    // Incrementar peso si ya existe la relación
                     int pesoActual = grafoAfinidad.obtenerPesoArista(e1, e2);
                     grafoAfinidad.agregarArista(e1, e2, pesoActual + 1);
                 }
@@ -65,301 +78,37 @@ public class RedSocial {
         }
     }
 
-    public void actualizarAfinidad(Estudiante e1, Estudiante e2, int incremento) {
-        int pesoActual = grafoAfinidad.obtenerPesoArista(e1, e2);
-        grafoAfinidad.agregarArista(e1, e2, pesoActual + incremento);
-        // Opcional: guardar en persistencia
-    }
-
-    public List<Estudiante> obtenerRecomendacionesAmplias(String idEstudiante) {
-        Usuario usuario = buscarUsuario(idEstudiante);
-        if (!(usuario instanceof Estudiante)) {
-            throw new IllegalArgumentException("El usuario no es un estudiante");
-        }
-        return grafoAfinidad.obtenerRecomendaciones((Estudiante) usuario);
-    }
-
     private void cargarContenidosAlArbol() {
         List<Contenido> contenidos = utilRed.obtenerContenidos();
-        if (contenidos != null) {
-            for (Contenido contenido : contenidos) {
-                arbolContenidos.insertar(contenido);
-            }
+        if (contenidos != null && !contenidos.isEmpty()) {
+            System.out.println("Cargando " + contenidos.size() + " contenidos al árbol");
+            contenidos.forEach(c -> {
+                System.out.println("Insertando contenido: " + c.getTitulo());
+                arbolContenidos.insertar(c);
+            });
+        } else {
+            System.out.println("No se encontraron contenidos para cargar");
         }
     }
 
-    /**
-     * Crea un nuevo contenido educativo asociado a un estudiante
-     * @param estudianteId ID del estudiante autor (no puede ser nulo o vacío)
-     * @param titulo Título del contenido (no puede ser nulo o vacío)
-     * @param descripcion Descripción detallada (no puede ser nula)
-     * @param tipo Tipo de contenido según enum TipoContenido (no puede ser nulo)
-     * @param tema Área de conocimiento (no puede ser nula)
-     * @param contenidoRuta Ruta absoluta del archivo o URL completa (no puede ser nula)
-     * @return true si se creó exitosamente, false si hubo error
-     * @throws IllegalArgumentException si los parámetros no cumplen validaciones
-     */
-    public boolean crearContenido(String estudianteId, String titulo, String descripcion,
-                                  TipoContenido tipo, String tema, String contenidoRuta) throws OperacionFallidaException {
-        // Validaciones estrictas
-        Objects.requireNonNull(estudianteId, "ID de estudiante no puede ser nulo");
-        Objects.requireNonNull(titulo, "Título no puede ser nulo");
-        Objects.requireNonNull(tipo, "Tipo de contenido no puede ser nulo");
-        Objects.requireNonNull(tema, "Tema no puede ser nulo");
-        Objects.requireNonNull(contenidoRuta, "Ruta/URL de contenido no puede ser nula");
-        Objects.requireNonNull(descripcion, "Descripción no puede ser nula");
-
-        if (estudianteId.trim().isEmpty() || titulo.trim().isEmpty()) {
-            throw new IllegalArgumentException("ID de estudiante y título no pueden estar vacíos");
-        }
-
-        // Validación específica para enlaces
-        if (tipo == TipoContenido.ENLACE && !contenidoRuta.matches("^(https?|ftp)://.*$")) {
-            throw new IllegalArgumentException("Formato de enlace inválido. Debe comenzar con http://, https:// o ftp://");
-        }
-
-        // Buscar y validar estudiante
-        Usuario usuario = buscarUsuario(estudianteId);
-        if (!(usuario instanceof Estudiante)) {
-            throw new IllegalArgumentException("El ID no corresponde a un estudiante registrado");
-        }
-        Estudiante estudiante = (Estudiante) usuario;
-
-        Contenido nuevoContenido;
-        // Crear nuevo contenido con lista vacía de valoraciones
-        nuevoContenido = new Contenido(
-                null, // Se generará ID automático
-                titulo,
-                estudiante.getNombre(),
-                LocalDateTime.now(),
-                tipo,
-                descripcion,
-                tema,
-                contenidoRuta,
-                null // Se inicializará lista vacía en el constructor
-        );
-
-        // Actualizar relaciones
-        estudiante.agregarContenido(nuevoContenido.getId());
-        arbolContenidos.insertar(nuevoContenido);
-        utilRed.guardarContenido(nuevoContenido);
-
-        return true;
-    }
-
-    public List<Contenido> getContenidoPorAutor(String autor) {
-        Objects.requireNonNull(autor, "El autor no puede ser nulo");
-        return arbolContenidos.buscarPorAutor(autor);
-    }
-
-    public List<Contenido> getContenidoPorTema(String tema) {
-        Objects.requireNonNull(tema, "El tema no puede ser nulo");
-        return arbolContenidos.buscarPorTema(tema);
-    }
-
-    public List<Contenido> getContenidoPorTipo(TipoContenido tipo) {
-        Objects.requireNonNull(tipo, "El tipo no puede ser nulo");
-        List<Contenido> todos = arbolContenidos.obtenerTodosEnOrden();
-        List<Contenido> filtrados = new ArrayList<>();
-
-        for (Contenido contenido : todos) {
-            if (contenido.getTipo() == tipo) {
-                filtrados.add(contenido);
-            }
-        }
-
-        return filtrados;
-    }
-
-    public void cambiarCriterioOrden(CriterioOrden nuevoCriterio) {
-        Objects.requireNonNull(nuevoCriterio, "El criterio no puede ser nulo");
-
-        List<Contenido> contenidos = arbolContenidos.obtenerTodosEnOrden();
-        this.arbolContenidos = new ArbolContenidos(nuevoCriterio);
-
-        for (Contenido contenido : contenidos) {
-            arbolContenidos.insertar(contenido);
-        }
-    }
-
-    public void registrarUsuario(Usuario usuario) {
+    // Métodos de gestión de usuarios
+    public boolean registrarUsuario(Usuario usuario) {
         validarUsuario(usuario);
         utilRed.registrarUsuario(usuario);
         usuarios.add(usuario);
-        grafoAfinidad.agregarNodo((Estudiante) usuario); // Solo si es Estudiante
+        if (usuario instanceof Estudiante) {
+            grafoAfinidad.agregarNodo((Estudiante) usuario);
+        }
+        return true;
     }
-
 
     public void modificarUsuario(Usuario usuario) {
         validarUsuario(usuario);
         utilRed.modificarUsuario(usuario);
     }
 
-    public List<Usuario> obtenerUsuarios() {
-        return utilRed.obtenerUsuarios(); // Retorna copia para evitar modificaciones externas
-    }
-
-    public List<Contenido> obtenerContenidos() {
-        return utilRed.obtenerContenidos(); // Retorna copia para evitar modificaciones externas
-    }
-
-    public void agregarSolicitud(SolicitudAyuda solicitud) {
-        validarSolicitud(solicitud);
-        colaSolicitudes.add(solicitud);
-        utilRed.guardarSolicitud(solicitud);
-    }
-
-    public SolicitudAyuda atenderSolicitud() {
-        SolicitudAyuda solicitud = colaSolicitudes.poll();
-        if (solicitud != null) {
-            utilRed.actualizarEstadoSolicitud(solicitud.getId(), Estado.RESUELTA);
-        }
-        return solicitud;
-    }
-
-    public Usuario iniciarSesion(String correo, String contrasenia) {
-        return utilRed.iniciarSesion(correo, contrasenia);
-    }
-
-    public List<Estudiante> generarRecomendaciones(String idUsuario) {
-        Usuario usuario = buscarUsuario(idUsuario);
-        if (!(usuario instanceof Estudiante)) {
-            throw new IllegalArgumentException("El usuario no es un estudiante");
-        }
-        return grafoAfinidad.obtenerRecomendaciones((Estudiante) usuario);
-    }
-
-    public List<GrupoEstudio> formarGruposAutomaticos() {
-        // 1. Creación básica de grupos (delegado a UtilRedSocial)
-        List<GrupoEstudio> grupos = utilRed.formarGruposAutomaticos(this.usuarios);
-
-        // 2. Persistencia
-        utilRed.guardarGrupos(grupos);
-
-        // 3. Actualización de afinidades
-        actualizarAfinidadPorGrupos(grupos);
-
-        return grupos;
-    }
-
-    private void actualizarAfinidadPorGrupos(List<GrupoEstudio> grupos) {
-        for (GrupoEstudio grupo : grupos) {
-            List<String> idsMiembros = grupo.getIdMiembros();
-
-            for (int i = 0; i < idsMiembros.size(); i++) {
-                for (int j = i + 1; j < idsMiembros.size(); j++) {
-                    actualizarRelacionAfinidad(idsMiembros.get(i), idsMiembros.get(j));
-                }
-            }
-        }
-    }
-
-    private void actualizarRelacionAfinidad(String id1, String id2) {
-        try {
-            Estudiante e1 = (Estudiante) buscarUsuario(id1);
-            Estudiante e2 = (Estudiante) buscarUsuario(id2);
-
-            if (e1 != null && e2 != null) {
-                grafoAfinidad.agregarArista(
-                        e1,
-                        e2,
-                        grafoAfinidad.obtenerPesoArista(e1, e2) + 1
-                );
-                // Opcional: Actualizar en persistencia si es necesario
-                actualizarInteresesCompartidos(e1, e2);
-            }
-        } catch (Exception e) {
-            System.err.println("Error actualizando afinidad: " + e.getMessage());
-        }
-    }
-
-    private void actualizarInteresesCompartidos(Estudiante e1, Estudiante e2) throws OperacionFallidaException {
-        // Lógica adicional si necesitas registrar intereses compartidos
-        String interesGrupo = "Colaboración en Grupo";
-        e1.agregarInteres(interesGrupo);
-        e2.agregarInteres(interesGrupo);
-        utilRed.actualizarEstudiante(e1);
-        utilRed.actualizarEstudiante(e2);
-    }
-
-    public Usuario buscarUsuario(String idUsuario) {
-        return usuarios.stream()
-                .filter(u -> u.getId().equals(idUsuario))
-                .findFirst()
-                .orElseThrow(() -> new IllegalArgumentException("Usuario no encontrado"));
-    }
-
-    private void validarUsuario(Usuario usuario) {
-        Objects.requireNonNull(usuario, "El usuario no puede ser nulo");
-        if (usuario.getNombre() == null || usuario.getCorreo() == null) {
-            throw new IllegalArgumentException("Nombre y correo son obligatorios");
-        }
-    }
-
-    private void validarSolicitud(SolicitudAyuda solicitud) {
-        Objects.requireNonNull(solicitud, "La solicitud no puede ser nula");
-        if (!usuarios.stream().anyMatch(u -> u.getId().equals(solicitud.getSolicitanteId()))) {
-            throw new IllegalArgumentException("El solicitante no existe");
-        }
-    }
-
-    private void actualizarGrafoAfinidad(List<GrupoEstudio> grupos) {
-        grupos.forEach(grupo -> {
-            List<String> miembros = grupo.getIdMiembros();
-            for (int i = 0; i < miembros.size(); i++) {
-                for (int j = i + 1; j < miembros.size(); j++) {
-                    Estudiante estudiante1 = (Estudiante) buscarUsuario(miembros.get(i));
-                    Estudiante estudiante2 = (Estudiante) buscarUsuario(miembros.get(j));
-                    grafoAfinidad.agregarArista(estudiante1, estudiante2, 1); // Peso de afinidad básico
-                }
-            }
-        });
-    }
-
-    public String getNombre() {
-        return this.nombre;
-    }
-
-    public List<Usuario> getUsuarios() {
-        return new ArrayList<>(this.usuarios);
-    }
-
-    public PriorityQueue<SolicitudAyuda> getSolicitudesAyuda() {
-        return new PriorityQueue<>(this.colaSolicitudes);
-    }
-
-    public GrafoAfinidad getGrafoAfinidad() {
-        return this.grafoAfinidad;
-    }
-
-    public List<Contenido> getContenidosOrdenados() {
-        return Collections.unmodifiableList(this.arbolContenidos.obtenerTodosEnOrden());
-    }
-
-    public List<Contenido> obtenerContenidosPorEstudiante(String userId) {
-        List<Contenido> contenidos = new ArrayList<>();
-        for (Contenido contenido : arbolContenidos.obtenerTodosEnOrden()) {
-            if (contenido.getAutor().equals(userId)) {
-                contenidos.add(contenido);
-            }
-        }
-        return contenidos;
-    }
-
-    public List<SolicitudAyuda> obtenerSolicitudes() {
-        List<SolicitudAyuda> solicitudes = new ArrayList<>();
-        while (!colaSolicitudes.isEmpty()) {
-            SolicitudAyuda solicitud = colaSolicitudes.poll();
-            if (solicitud != null) {
-                solicitudes.add(solicitud);
-            }
-        }
-        return solicitudes;
-    }
-
     public boolean actualizarUsuario(Usuario usuario) {
         try {
-            // Verificar si el usuario es un Estudiante
             if (usuario instanceof Estudiante) {
                 Estudiante estudiante = (Estudiante) usuario;
                 return utilRed.actualizarEstudiante(estudiante);
@@ -383,9 +132,7 @@ public class RedSocial {
             eliminarContenidosUsuario(usuarioId);
             eliminarSolicitudesUsuario(usuarioId);
 
-            // 3. Eliminar el usuario
             return utilRed.eliminarUsuario(usuarioId);
-
         } catch (Exception e) {
             System.err.println("Error al eliminar usuario: " + e.getMessage());
             return false;
@@ -393,7 +140,7 @@ public class RedSocial {
     }
 
     private void eliminarContenidosUsuario(String usuarioId) {
-        List<Contenido> contenidos = arbolContenidos.obtenerTodosEnOrden();
+        List<Contenido> contenidos = arbolContenidos.obtenerTodosEnOrden(obtenerContenidosSinArbol());
         List<Contenido> aEliminar = new ArrayList<>();
 
         for (Contenido contenido : contenidos) {
@@ -403,11 +150,10 @@ public class RedSocial {
         }
 
         for (Contenido contenido : aEliminar) {
-            arbolContenidos.eliminar(contenido); // Este método debe estar implementado en tu ArbolContenidos
+            arbolContenidos.eliminar(contenido);
             utilRed.eliminarContenido(contenido.getId());
         }
     }
-
 
     private void eliminarSolicitudesUsuario(String usuarioId) {
         PriorityQueue<SolicitudAyuda> nuevaCola = new PriorityQueue<>(Comparator.comparingInt(s -> s.getUrgencia().ordinal()));
@@ -424,17 +170,258 @@ public class RedSocial {
         this.colaSolicitudes = nuevaCola;
     }
 
+    // Métodos de gestión de contenidos
+    public boolean crearContenido(String estudianteId, String titulo, String descripcion,
+                                  TipoContenido tipo, String tema, String contenidoRuta) throws OperacionFallidaException {
+        Objects.requireNonNull(estudianteId, "ID de estudiante no puede ser nulo");
+        Objects.requireNonNull(titulo, "Título no puede ser nulo");
+        Objects.requireNonNull(tipo, "Tipo de contenido no puede ser nulo");
+        Objects.requireNonNull(tema, "Tema no puede ser nulo");
+        Objects.requireNonNull(contenidoRuta, "Ruta/URL de contenido no puede ser nula");
+        Objects.requireNonNull(descripcion, "Descripción no puede ser nula");
 
-    public String obtenerTotalUsuarios() {
-        return String.valueOf(usuarios.size());
+        if (estudianteId.trim().isEmpty() || titulo.trim().isEmpty()) {
+            throw new IllegalArgumentException("ID de estudiante y título no pueden estar vacíos");
+        }
+
+        if (tipo == TipoContenido.ENLACE && !contenidoRuta.matches("^(https?|ftp)://.*$")) {
+            throw new IllegalArgumentException("Formato de enlace inválido. Debe comenzar con http://, https:// o ftp://");
+        }
+
+        Usuario usuario = buscarUsuario(estudianteId);
+        if (!(usuario instanceof Estudiante)) {
+            throw new IllegalArgumentException("El ID no corresponde a un estudiante registrado");
+        }
+        Estudiante estudiante = (Estudiante) usuario;
+
+        Contenido nuevoContenido = new Contenido(
+                null,
+                titulo,
+                estudiante.getNombre(),
+                LocalDateTime.now(),
+                tipo,
+                descripcion,
+                tema,
+                contenidoRuta,
+                null
+        );
+
+        estudiante.agregarContenido(nuevoContenido.getId());
+        arbolContenidos.insertar(nuevoContenido);
+        utilRed.guardarContenido(nuevoContenido);
+
+        return true;
     }
 
-    public String obtenerTotalContenidos() {
-        return String.valueOf(arbolContenidos.obtenerTodosEnOrden().size());
+    public void cambiarCriterioOrden(CriterioOrden nuevoCriterio) {
+        Objects.requireNonNull(nuevoCriterio, "El criterio no puede ser nulo");
+
+        List<Contenido> contenidos = arbolContenidos.obtenerTodosEnOrden(obtenerContenidosSinArbol());
+        this.arbolContenidos = new ArbolContenidos(nuevoCriterio);
+
+        for (Contenido contenido : contenidos) {
+            arbolContenidos.insertar(contenido);
+        }
     }
 
-    public String obtenerTotalSolicitudes() {
-        return String.valueOf(colaSolicitudes.size());
+    // Métodos de búsqueda de contenidos
+    public List<Contenido> getContenidoPorAutor(String autor) {
+        Objects.requireNonNull(autor, "El autor no puede ser nulo");
+        return arbolContenidos.buscarPorAutor(autor);
+    }
+
+    public List<Contenido> getContenidoPorTema(String tema) {
+        Objects.requireNonNull(tema, "El tema no puede ser nulo");
+        return arbolContenidos.buscarPorTema(tema);
+    }
+
+    public List<Contenido> getContenidoPorTipo(TipoContenido tipo) {
+        Objects.requireNonNull(tipo, "El tipo no puede ser nulo");
+        List<Contenido> todos = arbolContenidos.obtenerTodosEnOrden(obtenerContenidosSinArbol());
+        List<Contenido> filtrados = new ArrayList<>();
+
+        for (Contenido contenido : todos) {
+            if (contenido.getTipo() == tipo) {
+                filtrados.add(contenido);
+            }
+        }
+
+        return filtrados;
+    }
+
+    public List<Contenido> obtenerContenidosPorEstudiante(String userId) {
+        List<Contenido> contenidos = new ArrayList<>();
+        for (Contenido contenido : arbolContenidos.obtenerTodosEnOrden(obtenerContenidosSinArbol())) {
+            if (contenido.getAutor().equals(userId)) {
+                contenidos.add(contenido);
+            }
+        }
+        return contenidos;
+    }
+
+    // Métodos de gestión de solicitudes
+    public void agregarSolicitud(SolicitudAyuda solicitud) {
+        validarSolicitud(solicitud);
+        colaSolicitudes.add(solicitud);
+        utilRed.guardarSolicitud(solicitud);
+    }
+
+    public boolean crearSolicitud(SolicitudAyuda solicitud) {
+        if (solicitud == null || solicitud.getSolicitanteId() == null) {
+            throw new IllegalArgumentException("La solicitud o el ID del solicitante no pueden ser nulos");
+        }
+
+        colaSolicitudes.add(solicitud);
+        utilRed.guardarSolicitud(solicitud);
+        return true;
+    }
+
+    public SolicitudAyuda atenderSolicitud() {
+        SolicitudAyuda solicitud = colaSolicitudes.poll();
+        if (solicitud != null) {
+            utilRed.actualizarEstadoSolicitud(solicitud.getId(), Estado.RESUELTA);
+        }
+        return solicitud;
+    }
+
+    // Métodos de recomendaciones y afinidad
+    public void actualizarAfinidad(Estudiante e1, Estudiante e2, int incremento) {
+        int pesoActual = grafoAfinidad.obtenerPesoArista(e1, e2);
+        grafoAfinidad.agregarArista(e1, e2, pesoActual + incremento);
+    }
+
+    public List<Estudiante> obtenerRecomendacionesAmplias(String idEstudiante) {
+        Usuario usuario = buscarUsuario(idEstudiante);
+        if (!(usuario instanceof Estudiante)) {
+            throw new IllegalArgumentException("El usuario no es un estudiante");
+        }
+        return grafoAfinidad.obtenerRecomendaciones((Estudiante) usuario);
+    }
+
+    public List<Estudiante> generarRecomendaciones(String idUsuario) {
+        Usuario usuario = buscarUsuario(idUsuario);
+        if (!(usuario instanceof Estudiante)) {
+            throw new IllegalArgumentException("El usuario no es un estudiante");
+        }
+        return grafoAfinidad.obtenerRecomendaciones((Estudiante) usuario);
+    }
+
+    // Métodos de grupos de estudio
+    public List<GrupoEstudio> formarGruposAutomaticos() {
+        List<GrupoEstudio> grupos = utilRed.formarGruposAutomaticos(this.usuarios);
+        utilRed.guardarGrupos(grupos);
+        actualizarAfinidadPorGrupos(grupos);
+        return grupos;
+    }
+
+    private void actualizarAfinidadPorGrupos(List<GrupoEstudio> grupos) {
+        for (GrupoEstudio grupo : grupos) {
+            List<String> idsMiembros = grupo.getIdMiembros();
+            for (int i = 0; i < idsMiembros.size(); i++) {
+                for (int j = i + 1; j < idsMiembros.size(); j++) {
+                    actualizarRelacionAfinidad(idsMiembros.get(i), idsMiembros.get(j));
+                }
+            }
+        }
+    }
+
+    private void actualizarRelacionAfinidad(String id1, String id2) {
+        try {
+            Estudiante e1 = (Estudiante) buscarUsuario(id1);
+            Estudiante e2 = (Estudiante) buscarUsuario(id2);
+
+            if (e1 != null && e2 != null) {
+                grafoAfinidad.agregarArista(
+                        e1,
+                        e2,
+                        grafoAfinidad.obtenerPesoArista(e1, e2) + 1
+                );
+                actualizarInteresesCompartidos(e1, e2);
+            }
+        } catch (Exception e) {
+            System.err.println("Error actualizando afinidad: " + e.getMessage());
+        }
+    }
+
+    private void actualizarInteresesCompartidos(Estudiante e1, Estudiante e2) throws OperacionFallidaException {
+        String interesGrupo = "Colaboración en Grupo";
+        e1.agregarInteres(interesGrupo);
+        e2.agregarInteres(interesGrupo);
+        utilRed.actualizarEstudiante(e1);
+        utilRed.actualizarEstudiante(e2);
+    }
+
+    // Métodos de obtención de datos
+    public Usuario buscarUsuario(String idUsuario) {
+        return usuarios.stream()
+                .filter(u -> u.getId().equals(idUsuario))
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException("Usuario no encontrado"));
+    }
+
+    public Usuario iniciarSesion(String correo, String contrasenia) {
+        return utilRed.iniciarSesion(correo, contrasenia);
+    }
+
+    public List<Usuario> obtenerUsuarios() {
+        return utilRed.obtenerUsuarios();
+    }
+
+    public List<Contenido> obtenerContenidos() {
+        return utilRed.obtenerContenidos();
+    }
+
+    public List<Contenido> obtenerContenidosSinArbol() {
+        return utilRed.obtenerContenidos();
+    }
+
+    public List<Contenido> getContenidosOrdenados() {
+        return Collections.unmodifiableList(this.arbolContenidos.obtenerTodosEnOrden(utilRed.obtenerContenidos()));
+    }
+
+    /**
+     * Obtiene todos los contenidos combinando los del árbol con los de utilRed
+     * @return Lista combinada y no modificable de todos los contenidos
+     */
+    public List<Contenido> obtenerTodosContenidos() {
+        try {
+            List<Contenido> contenidosExternos = Optional.ofNullable(utilRed.obtenerContenidos())
+                    .orElseGet(ArrayList::new);
+
+            List<Contenido> contenidosArbol = arbolContenidos.obtenerTodosEnOrden(utilRed.obtenerContenidos());
+
+            // Simplificar la combinación
+            List<Contenido> todosContenidos = new ArrayList<>(contenidosArbol);
+            contenidosExternos.stream()
+                    .filter(c -> !todosContenidos.contains(c))
+                    .forEach(todosContenidos::add);
+
+            System.out.println("Total de contenidos obtenidos: " + todosContenidos.size());
+            return todosContenidos;
+        } catch (Exception e) {
+            System.err.println("Error al obtener contenidos: " + e.getMessage());
+            return Collections.emptyList();
+        }
+    }
+
+    // Versión mejorada de obtenerTodasSolicitudes()
+    public List<SolicitudAyuda> obtenerTodasSolicitudes() {
+        // 1. Crear lista combinada
+        List<SolicitudAyuda> todasSolicitudes = new ArrayList<>();
+
+        // 2. Agregar solicitudes de utilRed primero
+        List<SolicitudAyuda> solicitudesPersistidas = utilRed.obtenerSolicitudes();
+        if (solicitudesPersistidas != null) {
+            todasSolicitudes.addAll(solicitudesPersistidas);
+        }
+
+        // 3. Agregar solicitudes en memoria (sin vaciar la cola)
+        todasSolicitudes.addAll(new ArrayList<>(colaSolicitudes));
+
+        // 4. Ordenar por urgencia (para mantener prioridad)
+        todasSolicitudes.sort(Comparator.comparingInt(s -> s.getUrgencia().ordinal()));
+
+        return todasSolicitudes;
     }
 
     public List<String> obtenerGruposEstudio(String userId) {
@@ -445,6 +432,19 @@ public class RedSocial {
             }
         }
         return gruposEstudio;
+    }
+
+    // Métodos de estadísticas
+    public String obtenerTotalUsuarios() {
+        return String.valueOf(usuarios.size());
+    }
+
+    public String obtenerTotalContenidos() {
+        return String.valueOf(arbolContenidos.obtenerTodosEnOrden(obtenerContenidosSinArbol()).size());
+    }
+
+    public String obtenerTotalSolicitudes() {
+        return String.valueOf(colaSolicitudes.size());
     }
 
     public String obtenerTotalContenidosUsuario(String userId) {
@@ -462,30 +462,121 @@ public class RedSocial {
         return String.valueOf(solicitudes.size());
     }
 
-    public List<Contenido> obtenerTodosContenidos() {
-        return arbolContenidos.obtenerTodosEnOrden();
+    // Getters
+    public String getNombre() {
+        return this.nombre;
     }
 
-    public boolean crearSolicitud(SolicitudAyuda solicitud1) {
-        // Validar la solicitud
-        if (solicitud1 == null || solicitud1.getSolicitanteId() == null) {
-            throw new IllegalArgumentException("La solicitud o el ID del solicitante no pueden ser nulos");
+    public List<Usuario> getUsuarios() {
+        return new ArrayList<>(this.usuarios);
+    }
+
+    public PriorityQueue<SolicitudAyuda> getSolicitudesAyuda() {
+        return new PriorityQueue<>(this.colaSolicitudes);
+    }
+
+    public GrafoAfinidad getGrafoAfinidad() {
+        return this.grafoAfinidad;
+    }
+
+    // Métodos de validación
+    private void validarUsuario(Usuario usuario) {
+        Objects.requireNonNull(usuario, "El usuario no puede ser nulo");
+        if (usuario.getNombre() == null || usuario.getCorreo() == null) {
+            throw new IllegalArgumentException("Nombre y correo son obligatorios");
+        }
+    }
+
+    private void validarSolicitud(SolicitudAyuda solicitud) {
+        Objects.requireNonNull(solicitud, "La solicitud no puede ser nula");
+        if (!usuarios.stream().anyMatch(u -> u.getId().equals(solicitud.getSolicitanteId()))) {
+            throw new IllegalArgumentException("El solicitante no existe");
+        }
+    }
+
+    public double obtenerPromedioValoraciones(String contenidoId) {
+        Contenido contenido = arbolContenidos.buscarPorId(contenidoId);
+        if (contenido == null) {
+            throw new IllegalArgumentException("Contenido no encontrado");
+        }
+        return contenido.obtenerPromedioValoracion();
+    }
+
+    public int obtenerTotalValoraciones(String contenidoId) {
+        Contenido contenido = arbolContenidos.buscarPorId(contenidoId);
+        if (contenido == null) {
+            throw new IllegalArgumentException("Contenido no encontrado");
+        }
+        return contenido.getValoraciones().size();
+    }
+
+
+    public boolean usuarioYaValoroContenido(String usuarioId, String contenidoId) {
+        Contenido contenido = arbolContenidos.buscarPorId(contenidoId);
+        if (contenido == null) {
+            throw new IllegalArgumentException("Contenido no encontrado");
+        }
+        return contenido.getValoraciones().stream()
+                .anyMatch(v -> v.getIdAutor().equals(usuarioId));
+    }
+
+    public Contenido buscarContenido(String contenidoId) {
+        // 1. Buscar el contenido en el árbol
+        Contenido contenido = arbolContenidos.buscarPorId(contenidoId);
+
+        if (contenido == null) {
+            throw new IllegalArgumentException("Contenido no encontrado");
         }
 
-        // Agregar la solicitud a la cola
-        colaSolicitudes.add(solicitud1);
-        utilRed.guardarSolicitud(solicitud1);
-        return true;
+        // 2. Cargar las valoraciones asociadas desde la base de datos
+        List<Valoracion> valoraciones = cargarValoracionesParaContenido(contenidoId);
+        contenido.setValoraciones(new LinkedList<>(valoraciones));
+
+        System.out.println("[DEBUG] Contenido encontrado - ID: " + contenidoId +
+                " | Valoraciones: " + valoraciones.size());
+
+        return contenido;
     }
 
-    public List<SolicitudAyuda> obtenerTodasSolicitudes() {
-        List<SolicitudAyuda> solicitudes = new ArrayList<>();
-        while (!colaSolicitudes.isEmpty()) {
-            SolicitudAyuda solicitud = colaSolicitudes.poll();
-            if (solicitud != null) {
-                solicitudes.add(solicitud);
+    public List<Valoracion> cargarValoracionesParaContenido(String contenidoId) {
+        try {
+            // 1. Verificar parámetro de entrada
+            Objects.requireNonNull(contenidoId, "El ID de contenido no puede ser nulo");
+            if (contenidoId.trim().isEmpty()) {
+                throw new IllegalArgumentException("El ID de contenido no puede estar vacío");
             }
+
+            System.out.println("Cargando valoraciones para contenido: " + contenidoId);
+
+            // 2. Buscar el contenido en la persistencia
+            Contenido contenido = utilRed.buscarContenidoPorId(contenidoId);
+            if (contenido == null) {
+                System.out.println("No se encontró contenido con ID: " + contenidoId);
+                return Collections.emptyList();
+            }
+
+            // 3. Obtener valoraciones directamente del contenido
+            List<Valoracion> valoraciones = contenido.getValoraciones();
+
+            // 4. Loggear resultados
+            System.out.println("Encontradas " + valoraciones.size() + " valoraciones para contenido: " + contenidoId);
+
+            // 5. Retornar copia defensiva
+            return new ArrayList<>(valoraciones);
+
+        } catch (Exception e) {
+            System.out.println("Error al cargar valoraciones para contenido " + contenidoId + ": " + e.getMessage());
+            return Collections.emptyList();
         }
-        return solicitudes;
+    }
+
+    public boolean agregarValoracion(String contenidoId, Valoracion valoracion) {
+        Contenido contenido = arbolContenidos.buscarPorId(contenidoId);
+        if (contenido == null) {
+            throw new IllegalArgumentException("Contenido no encontrado");
+        }
+        contenido.agregarValoracion(valoracion);
+        utilRed.guardarValoracion(contenidoId, valoracion);
+        return true;
     }
 }

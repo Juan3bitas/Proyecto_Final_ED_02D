@@ -5,33 +5,50 @@ import main.java.proyectofinal.modelo.*;
 import main.java.proyectofinal.utils.UtilRedSocial;
 
 import java.io.*;
+import java.lang.reflect.Type;
 import java.net.*;
 import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class ServidorRedSocial {
     private static final int PUERTO = 12345;
-    private static RedSocial redSocial = new RedSocial(new UtilRedSocial());
+    private static final int MAX_HILOS = 50;
+    private static final RedSocial redSocial = new RedSocial(new UtilRedSocial());
+    private static final ExecutorService threadPool = Executors.newFixedThreadPool(MAX_HILOS);
+    private static final Gson gson = new GsonBuilder()
+            .registerTypeAdapter(LocalDateTime.class, new LocalDateTimeAdapter())
+            .setDateFormat("yyyy-MM-dd HH:mm:ss")
+            .create();
+    private static final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+    private static final Logger LOGGER = Logger.getLogger(ServidorRedSocial.class.getName());
 
     public static void main(String[] args) {
         try (ServerSocket serverSocket = new ServerSocket(PUERTO)) {
             System.out.println("✅ Servidor iniciado en puerto " + PUERTO);
 
-            while (true) { // El servidor siempre escucha
+            while (true) {
                 Socket socketCliente = serverSocket.accept();
-                new Thread(() -> manejarCliente(socketCliente)).start();
+                threadPool.execute(() -> manejarCliente(socketCliente));
             }
         } catch (IOException e) {
             System.err.println("❌ Error en servidor: " + e.getMessage());
+        } finally {
+            threadPool.shutdown();
         }
     }
 
     private static void manejarCliente(Socket socket) {
+        String clienteIp = socket.getInetAddress().getHostAddress();
+        System.out.println("🔗 Cliente conectado desde: " + clienteIp);
+
         try (BufferedReader entrada = new BufferedReader(new InputStreamReader(socket.getInputStream()));
              PrintWriter salida = new PrintWriter(socket.getOutputStream(), true)) {
-
-            System.out.println("🔗 Cliente conectado desde: " + socket.getInetAddress());
 
             String mensaje;
             while ((mensaje = entrada.readLine()) != null) {
@@ -40,11 +57,11 @@ public class ServidorRedSocial {
             }
 
         } catch (IOException e) {
-            System.err.println("⚠️ Error con cliente: " + e.getMessage());
+            System.err.println("⚠️ Error con cliente " + clienteIp + ": " + e.getMessage());
         } finally {
             try {
                 socket.close();
-                System.out.println("🔌 Cliente desconectado.");
+                System.out.println("🔌 Cliente " + clienteIp + " desconectado.");
             } catch (IOException e) {
                 System.err.println("Error al cerrar socket: " + e.getMessage());
             }
@@ -52,706 +69,759 @@ public class ServidorRedSocial {
     }
 
     private static JsonObject procesarSolicitud(String mensajeJson) {
-        Gson gson = new Gson();
         JsonObject respuesta = new JsonObject();
+        respuesta.addProperty("timestamp", System.currentTimeMillis());
 
         try {
             JsonObject solicitud = JsonParser.parseString(mensajeJson).getAsJsonObject();
 
-            // ✅ Validar que el JSON tenga 'tipo' y 'datos' antes de procesarlo
             if (!solicitud.has("tipo") || !solicitud.has("datos")) {
-                respuesta.addProperty("exito", false);
-                respuesta.addProperty("mensaje", "Error: JSON mal formado, falta 'tipo' o 'datos'");
-                return respuesta;
+                return crearRespuestaError("JSON mal formado: falta 'tipo' o 'datos'");
             }
 
             String tipo = solicitud.get("tipo").getAsString();
             JsonObject datos = solicitud.getAsJsonObject("datos");
 
-            // 📥 Depuración: Verificar los datos recibidos
-            System.out.println("📥 Datos recibidos en el servidor: " + datos);
+            System.out.println("📥 Solicitud [" + tipo + "] recibida: " + datos);
 
             switch (tipo) {
                 case "REGISTRO":
-                    // ✅ Asegurar que el objeto Estudiante se deserializa correctamente
-                    Estudiante estudiante = gson.fromJson(datos, Estudiante.class);
-                    System.out.println("🔍 Estudiante deserializado: " + estudiante);
-
-                    // ✅ Validar que los valores esenciales no sean nulos
-                    if (estudiante.getNombre() == null || estudiante.getCorreo() == null) {
-                        respuesta.addProperty("exito", false);
-                        respuesta.addProperty("mensaje", "Error: Nombre y correo son obligatorios.");
-                        return respuesta;
-                    }
-                    // ✅ Registrar el estudiante en el sistema
-                    redSocial.registrarUsuario(estudiante);
-                    respuesta.addProperty("exito", true);
-                    respuesta.addProperty("mensaje", "Registro exitoso");
-                    break;
-
+                    return manejarRegistro(datos);
                 case "LOGIN":
-                    try {
-                        // Validación básica
-                        if (!datos.has("correo") || !datos.has("contrasena")) {
-                            throw new IllegalArgumentException("Falta correo o contraseña");
-                        }
-
-                        String correo = datos.get("correo").getAsString().trim();
-                        String contrasena = datos.get("contrasena").getAsString();
-
-                        // Validaciones adicionales
-                        if (correo.isEmpty() || contrasena.isEmpty()) {
-                            throw new IllegalArgumentException("Correo y contraseña son obligatorios");
-                        }
-
-                        if (!correo.matches("^[\\w-\\.]+@([\\w-]+\\.)+[\\w-]{2,4}$")) {
-                            throw new IllegalArgumentException("Formato de correo inválido");
-                        }
-
-                        // Autenticación
-                        Usuario usuario = redSocial.iniciarSesion(correo, contrasena);
-
-                        if (usuario == null) {
-                            Thread.sleep(200); // Prevención timing attack
-                            throw new SecurityException("Credenciales inválidas");
-                        }
-
-                        // Respuesta exitosa
-                        respuesta.addProperty("exito", true);
-                        respuesta.add("usuario", gson.toJsonTree(usuario));
-                        respuesta.addProperty("token", generarToken(usuario.getId()));
-                        respuesta.addProperty("mensaje", "Bienvenido " + usuario.getNombre());
-
-                    } catch (IllegalArgumentException e) {
-                        respuesta.addProperty("exito", false);
-                        respuesta.addProperty("mensaje", "Error: " + e.getMessage());
-                    } catch (SecurityException e) {
-                        respuesta.addProperty("exito", false);
-                        respuesta.addProperty("mensaje", e.getMessage());
-                    } catch (Exception e) {
-                        respuesta.addProperty("exito", false);
-                        respuesta.addProperty("mensaje", "Error interno al procesar login");
-                    }
-                    break;
+                    return manejarLogin(datos);
                 case "OBTENER_CONTENIDOS":
-                    try {
-                        // Obtener todos los contenidos sin filtrar por usuario
-                        List<Contenido> contenidos = redSocial.obtenerTodosContenidos();
-
-                        JsonArray contenidosJson = new JsonArray();
-                        Gson gsonContenidos = new GsonBuilder()
-                                .setDateFormat("yyyy-MM-dd HH:mm:ss")
-                                .create();
-
-                        for (Contenido contenido : contenidos) {
-                            JsonObject contenidoJson = new JsonObject();
-                            contenidoJson.addProperty("id", contenido.getId());
-                            contenidoJson.addProperty("titulo", contenido.getTitulo());
-                            contenidoJson.addProperty("autor", contenido.getAutor());
-                            contenidoJson.addProperty("tema", contenido.getTema());
-                            contenidoJson.addProperty("descripcion", contenido.getDescripcion());
-                            contenidoJson.addProperty("tipo", contenido.getTipo().name());
-                            contenidoJson.addProperty("fechaCreacion",
-                                    new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(contenido.getFecha()));
-                            contenidoJson.addProperty("contenido", contenido.getContenido());
-
-                            // Valoraciones
-                            JsonArray valoracionesJson = new JsonArray();
-                            for (Valoracion valoracion : contenido.getValoraciones()) {
-                                JsonObject v = new JsonObject();
-                                v.addProperty("usuarioId", valoracion.getUsuarioId());
-                                v.addProperty("valor", valoracion.getValor());
-                                v.addProperty("comentario", valoracion.getComentario());
-                                valoracionesJson.add(v);
-                            }
-                            contenidoJson.add("valoraciones", valoracionesJson);
-
-                            contenidosJson.add(contenidoJson);
-                        }
-
-                        respuesta.addProperty("exito", true);
-                        respuesta.add("contenidos", contenidosJson);
-
-                    } catch (Exception e) {
-                        respuesta.addProperty("exito", false);
-                        respuesta.addProperty("mensaje", "Error al obtener contenidos: " + e.getMessage());
-                    }
-                    break;
-
+                    return manejarObtenerContenidos();
                 case "OBTENER_SOLICITUDES":
-                    try {
-                        List<SolicitudAyuda> solicitudes = redSocial.obtenerTodasSolicitudes();
-                        JsonArray jsonSolicitudes = new JsonArray();
-
-                        for (SolicitudAyuda solicitud1 : solicitudes) {
-                            JsonObject jsonSolicitud = new JsonObject();
-                            jsonSolicitud.addProperty("id", solicitud1.getId());
-                            jsonSolicitud.addProperty("tema", solicitud1.getTema());
-                            jsonSolicitud.addProperty("descripcion", solicitud1.getDescripcion());
-                            jsonSolicitud.addProperty("fecha",
-                                    new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(solicitud1.getFecha()));
-                            jsonSolicitud.addProperty("urgencia", solicitud1.getUrgencia().name());
-                            jsonSolicitud.addProperty("estado", solicitud1.getEstado().name());
-                            jsonSolicitud.addProperty("solicitanteId", solicitud1.getSolicitanteId());
-
-                            // Obtener nombre del solicitante
-                            Usuario solicitante = redSocial.buscarUsuario(solicitud1.getSolicitanteId());
-                            jsonSolicitud.addProperty("solicitanteNombre",
-                                    solicitante != null ? solicitante.getNombre() : "Desconocido");
-
-                            jsonSolicitudes.add(jsonSolicitud);
-                        }
-
-                        respuesta.addProperty("exito", true);
-                        respuesta.add("solicitudes", jsonSolicitudes);
-
-                    } catch (Exception e) {
-                        respuesta.addProperty("exito", false);
-                        respuesta.addProperty("mensaje", "Error al obtener solicitudes: " + e.getMessage());
-                    }
-                    break;
+                    return manejarObtenerSolicitudes();
                 case "ACTUALIZAR_USUARIO":
-                    try {
-                        // Validar campos obligatorios
-                        if (!datos.has("id")) {
-                            throw new IllegalArgumentException("Falta el ID del usuario");
-                        }
-
-                        // Obtener datos del usuario
-                        String id = datos.get("id").getAsString();
-                        String nombre = datos.has("nombre") ? datos.get("nombre").getAsString() : null;
-                        String email = datos.has("email") ? datos.get("email").getAsString() : null;
-                        String password = datos.has("password") ? datos.get("password").getAsString() : null;
-
-                        // Validar que al menos un campo se esté actualizando
-                        if (nombre == null && email == null && password == null) {
-                            throw new IllegalArgumentException("Debe proporcionar al menos un campo para actualizar");
-                        }
-
-                        // Buscar usuario existente
-                        Usuario usuario = redSocial.buscarUsuario(id);
-                        if (usuario == null) {
-                            throw new IllegalArgumentException("Usuario no encontrado");
-                        }
-
-                        // Actualizar campos (solo los proporcionados)
-                        if (nombre != null) usuario.setNombre(nombre);
-                        if (email != null) usuario.setCorreo(email);
-                        if (password != null) usuario.setContrasenia(password);
-
-                        // Guardar cambios
-                        boolean exito = redSocial.actualizarUsuario(usuario);
-
-                        if (exito) {
-                            respuesta.addProperty("exito", true);
-                            respuesta.addProperty("mensaje", "Datos actualizados correctamente");
-                            respuesta.add("usuario", gson.toJsonTree(usuario));
-                        } else {
-                            respuesta.addProperty("exito", false);
-                            respuesta.addProperty("mensaje", "No se pudo actualizar el usuario");
-                        }
-
-                    } catch (IllegalArgumentException e) {
-                        respuesta.addProperty("exito", false);
-                        respuesta.addProperty("mensaje", "Error: " + e.getMessage());
-                    } catch (Exception e) {
-                        respuesta.addProperty("exito", false);
-                        respuesta.addProperty("mensaje", "Error interno al actualizar usuario");
-                    }
-                    break;
-
+                    return manejarActualizarUsuario(datos);
                 case "ELIMINAR_USUARIO":
-                    try {
-                        // Validar campos obligatorios
-                        if (!datos.has("usuarioId") && !datos.has("id")) {
-                            throw new IllegalArgumentException("Falta el ID del usuario");
-                        }
-                        String usuarioId = datos.has("usuarioId") ? datos.get("usuarioId").getAsString() : datos.get("id").getAsString();
-
-
-                        // Verificar que el usuario existe
-                        Usuario usuario = redSocial.buscarUsuario(usuarioId);
-                        if (usuario == null) {
-                            throw new IllegalArgumentException("Usuario no encontrado");
-                        }
-
-                        // Eliminar usuario
-                        boolean exito = redSocial.eliminarUsuario(usuarioId);
-
-                        if (exito) {
-                            respuesta.addProperty("exito", true);
-                            respuesta.addProperty("mensaje", "Cuenta eliminada correctamente");
-                        } else {
-                            respuesta.addProperty("exito", false);
-                            respuesta.addProperty("mensaje", "No se pudo eliminar el usuario");
-                        }
-
-                    } catch (IllegalArgumentException e) {
-                        respuesta.addProperty("exito", false);
-                        respuesta.addProperty("mensaje", "Error: " + e.getMessage());
-                    } catch (Exception e) {
-                        respuesta.addProperty("exito", false);
-                        respuesta.addProperty("mensaje", "Error interno al eliminar usuario");
-                    }
-                    break;
+                    return manejarEliminarUsuario(datos);
                 case "OBTENER_INFO_USUARIO":
-                    try {
-                        if (!datos.has("id")) {
-                            throw new IllegalArgumentException("Falta el ID del usuario");
-                        }
-                        String idUsuario = datos.get("id").getAsString();
-
-                        Usuario usuario = redSocial.buscarUsuario(idUsuario);
-                        if (usuario == null) {
-                            throw new IllegalArgumentException("Usuario no encontrado");
-                        }
-
-                        JsonObject usuarioJson = new JsonObject();
-                        usuarioJson.addProperty("id", usuario.getId());
-                        usuarioJson.addProperty("nombre", usuario.getNombre());
-                        usuarioJson.addProperty("email", usuario.getCorreo());  // aquí usas "email"
-
-                        respuesta.addProperty("exito", true);
-                        respuesta.add("usuario", usuarioJson);
-
-                    } catch (IllegalArgumentException e) {
-                        respuesta.addProperty("exito", false);
-                        respuesta.addProperty("mensaje", "Error: " + e.getMessage());
-                    } catch (Exception e) {
-                        respuesta.addProperty("exito", false);
-                        respuesta.addProperty("mensaje", "Error interno al obtener info usuario");
-                    }
-                    break;
-
                 case "OBTENER_USUARIO":
-                    try {
-                        if (!datos.has("id")) {
-                            throw new IllegalArgumentException("Falta el ID del usuario");
-                        }
-                        String idUsuario = datos.get("id").getAsString();
-
-                        Usuario usuario = redSocial.buscarUsuario(idUsuario);
-                        if (usuario == null) {
-                            throw new IllegalArgumentException("Usuario no encontrado");
-                        }
-
-                        JsonObject usuarioJson = new JsonObject();
-                        usuarioJson.addProperty("id", usuario.getId());
-                        usuarioJson.addProperty("nombre", usuario.getNombre());
-                        usuarioJson.addProperty("email", usuario.getCorreo());  // "email" igual aquí
-
-                        respuesta.addProperty("exito", true);
-                        respuesta.add("usuario", usuarioJson);
-
-                    } catch (IllegalArgumentException e) {
-                        respuesta.addProperty("exito", false);
-                        respuesta.addProperty("mensaje", "Error: " + e.getMessage());
-                    } catch (Exception e) {
-                        respuesta.addProperty("exito", false);
-                        respuesta.addProperty("mensaje", "Error interno al obtener info usuario");
-                    }
-                    break;
+                    return manejarObtenerUsuario(datos);
                 case "OBTENER_DATOS_MODERADOR":
-                    try {
-                        if (!solicitud.has("userId")) {
-                            throw new IllegalArgumentException("Falta el ID del usuario");
-                        }
-                        String userId = solicitud.get("userId").getAsString();
-
-                        Usuario usuario = redSocial.buscarUsuario(userId);
-                        if (usuario == null) {
-                            throw new IllegalArgumentException("Usuario no encontrado");
-                        }
-
-                        // Verificar que el usuario es moderador
-                        if (!(usuario instanceof Moderador)) {
-                            throw new SecurityException("El usuario no tiene permisos de moderador");
-                        }
-
-                        // Construir respuesta con datos completos del moderador
-                        JsonObject datosModerador = new JsonObject();
-                        datosModerador.addProperty("id", usuario.getId());
-                        datosModerador.addProperty("nombres", usuario.getNombre());
-                        datosModerador.addProperty("correo", usuario.getCorreo());
-
-                        // Agregar estadísticas específicas para moderador
-                        datosModerador.addProperty("totalUsuarios", redSocial.obtenerTotalUsuarios());
-                        datosModerador.addProperty("totalContenidos", redSocial.obtenerTotalContenidos());
-                        datosModerador.addProperty("totalSolicitudes", redSocial.obtenerTotalSolicitudes());
-
-                        respuesta.addProperty("exito", true);
-                        respuesta.add("datosUsuario", datosModerador);
-
-                    } catch (IllegalArgumentException | SecurityException e) {
-                        respuesta.addProperty("exito", false);
-                        respuesta.addProperty("mensaje", e.getMessage());
-                    } catch (Exception e) {
-                        respuesta.addProperty("exito", false);
-                        respuesta.addProperty("mensaje", "Error interno al obtener datos de moderador");
-                    }
-                    break;
-
+                    return manejarDatosModerador(datos);
                 case "OBTENER_DATOS_PERFIL":
-                    try {
-                        if (datos == null || !datos.has("userId") || datos.get("userId").getAsString().isEmpty()) {
-                            throw new IllegalArgumentException("Falta el ID del usuario");
-                        }
-
-                        String userId = datos.get("userId").getAsString();
-
-                        Usuario usuario = redSocial.buscarUsuario(userId);
-                        if (usuario == null) {
-                            throw new IllegalArgumentException("Usuario no encontrado");
-                        }
-
-                        // Construir respuesta con datos completos del perfil
-                        JsonObject datosPerfil = new JsonObject();
-                        datosPerfil.addProperty("id", usuario.getId());
-                        datosPerfil.addProperty("nombres", usuario.getNombre());
-                        datosPerfil.addProperty("correo", usuario.getCorreo());
-
-                        if (usuario instanceof Estudiante) {
-                            Estudiante estudiante1 = (Estudiante) usuario;
-                            List<String> intereses = estudiante1.getIntereses();
-                            String interesesStr = String.join(", ", intereses);
-                            datosPerfil.addProperty("intereses", interesesStr);
-                        } else {
-                            datosPerfil.addProperty("intereses", "");
-                        }
-
-                        // Obtener grupos de estudio del usuario
-                        JsonArray gruposArray = new JsonArray();
-                        List<String> grupos = redSocial.obtenerGruposEstudio(userId);
-                        for (String grupo : grupos) {
-                            gruposArray.add(grupo);
-                        }
-                        datosPerfil.add("gruposEstudio", gruposArray);
-
-                        // Obtener estadísticas del usuario
-                        datosPerfil.addProperty("contenidosPublicados", redSocial.obtenerTotalContenidosUsuario(userId));
-                        datosPerfil.addProperty("solicitudesPublicadas", redSocial.obtenerTotalSolicitudesUsuario(userId));
-
-                        respuesta.addProperty("exito", true);
-                        respuesta.add("datosUsuario", datosPerfil);
-
-                    } catch (IllegalArgumentException e) {
-                        respuesta.addProperty("exito", false);
-                        respuesta.addProperty("mensaje", e.getMessage());
-                    } catch (Exception e) {
-                        respuesta.addProperty("exito", false);
-                        respuesta.addProperty("mensaje", "Error interno al obtener datos de perfil");
-                    }
-                    break;
-
-
-
+                    return manejarDatosPerfil(datos);
                 case "ACTUALIZAR_DATOS_USUARIO":
-                    try {
-                        if (!datos.has("id")) {
-                            throw new IllegalArgumentException("Falta el ID del usuario");
-                        }
-
-                        String userId = datos.get("id").getAsString();
-                        Usuario usuario = redSocial.buscarUsuario(userId);
-                        if (usuario == null) {
-                            throw new IllegalArgumentException("Usuario no encontrado");
-                        }
-
-                        // Actualizar campos proporcionados
-                        if (datos.has("nombres")) usuario.setNombre(datos.get("nombres").getAsString());
-                        if (datos.has("correo")) usuario.setCorreo(datos.get("correo").getAsString());
-                        if (datos.has("intereses") && usuario instanceof Estudiante) {
-                            Estudiante estudiante2 = (Estudiante) usuario;
-                            String interesesStr = datos.get("intereses").getAsString();
-                            // Suponiendo que están separados por comas, por ejemplo: "música, lectura, deportes"
-                            LinkedList<String> intereses = new LinkedList<>(Arrays.asList(interesesStr.split("\\s*,\\s*")));
-                            estudiante2.setIntereses(intereses);
-                        }
-
-                        if (datos.has("contrasena")) usuario.setContrasenia(datos.get("contrasena").getAsString());
-
-                        // Guardar cambios
-                        boolean exito = redSocial.actualizarUsuario(usuario);
-
-                        if (exito) {
-                            respuesta.addProperty("exito", true);
-                            respuesta.addProperty("mensaje", "Datos actualizados correctamente");
-                            respuesta.add("usuario", gson.toJsonTree(usuario));
-                        } else {
-                            respuesta.addProperty("exito", false);
-                            respuesta.addProperty("mensaje", "No se pudo actualizar el usuario");
-                        }
-
-                    } catch (IllegalArgumentException e) {
-                        respuesta.addProperty("exito", false);
-                        respuesta.addProperty("mensaje", e.getMessage());
-                    } catch (Exception e) {
-                        respuesta.addProperty("exito", false);
-                        respuesta.addProperty("mensaje", "Error interno al actualizar usuario");
-                    }
-                    break;
-
+                    return manejarActualizarDatosUsuario(datos);
                 case "CREAR_PUBLICACION":
-                    try {
-                        // Validar campos obligatorios (actualizado con contenidoRuta)
-                        if (!datos.has("usuarioId") || !datos.has("titulo") ||
-                                !datos.has("tipoContenido") || !datos.has("contenido")) {
-                            throw new IllegalArgumentException("Faltan campos obligatorios: usuarioId, título, tipoContenido o contenido");
-                        }
-
-                        String usuarioId = datos.get("usuarioId").getAsString();
-                        String titulo = datos.get("titulo").getAsString();
-                        String descripcion = datos.has("descripcion") ? datos.get("descripcion").getAsString() : "";
-                        String tema = datos.has("tema") ? datos.get("tema").getAsString() : "General";
-                        TipoContenido tipo1 = TipoContenido.valueOf(datos.get("tipoContenido").getAsString());
-                        String contenidoRuta = datos.get("contenido").getAsString(); // Ruta o URL
-
-                        // Validación adicional para enlaces
-                        if (tipo1 == TipoContenido.ENLACE && !contenidoRuta.matches("^(https?|ftp)://.*")) {
-                            throw new IllegalArgumentException("Formato de enlace inválido. Debe comenzar con http://, https:// o ftp://");
-                        }
-
-                        // Crear y guardar la publicación (actualizado con contenidoRuta)
-                        boolean exito = redSocial.crearContenido(
-                                usuarioId,
-                                titulo,
-                                descripcion,
-                                tipo1,
-                                tema,
-                                contenidoRuta // <- Nuevo parámetro
-                        );
-
-                        if (exito) {
-                            respuesta.addProperty("exito", true);
-                            respuesta.addProperty("mensaje", "Publicación creada exitosamente");
-
-                            // Datos extendidos de respuesta
-                            JsonObject publicacionJson = new JsonObject();
-                            publicacionJson.addProperty("id", usuarioId + "-" + System.currentTimeMillis());
-                            publicacionJson.addProperty("titulo", titulo);
-                            publicacionJson.addProperty("tipo", tipo1.name());
-                            publicacionJson.addProperty("tema", tema);
-                            publicacionJson.addProperty("fecha", LocalDateTime.now().toString());
-                            publicacionJson.addProperty("contenido", contenidoRuta);
-                            respuesta.add("publicacion", publicacionJson);
-                        } else {
-                            respuesta.addProperty("exito", false);
-                            respuesta.addProperty("mensaje", "No se pudo crear la publicación. Verifique los datos.");
-                        }
-
-                    } catch (IllegalArgumentException e) {
-                        respuesta.addProperty("exito", false);
-                        respuesta.addProperty("mensaje", "Error de validación: " + e.getMessage());
-                    } catch (Exception e) {
-                        respuesta.addProperty("exito", false);
-                        respuesta.addProperty("mensaje", "Error interno: " + e.getMessage());
-                        e.printStackTrace();
-                    }
-                    break;
-
+                    return manejarCrearPublicacion(datos);
                 case "CREAR_SOLICITUD":
-                    try {
-                        // Validar campos obligatorios según el cliente
-                        if (!datos.has("usuarioId") || !datos.has("titulo") ||
-                                !datos.has("tema") || !datos.has("descripcion") ||
-                                !datos.has("urgencia")) {
-                            throw new IllegalArgumentException("Faltan campos obligatorios: usuarioId, título, tema, descripción o urgencia");
-                        }
-
-                        String usuarioId = datos.get("usuarioId").getAsString();
-                        String titulo = datos.get("titulo").getAsString();
-                        String tema = datos.get("tema").getAsString();
-                        String descripcion = datos.get("descripcion").getAsString();
-
-                        // Convertir la urgencia del cliente al enum Urgencia
-                        String urgenciaStr = datos.get("urgencia").getAsString();
-                        Urgencia urgencia;
-                        try {
-                            urgencia = Urgencia.valueOf(urgenciaStr.toUpperCase());
-                        } catch (IllegalArgumentException e) {
-                            throw new IllegalArgumentException("Nivel de urgencia inválido. Valores permitidos: ALTA, MEDIA, BAJA");
-                        }
-
-                        // Buscar al usuario que crea la solicitud
-                        Usuario usuario = redSocial.buscarUsuario(usuarioId);
-                        if (usuario == null) {
-                            throw new IllegalArgumentException("Usuario no encontrado");
-                        }
-
-                        // Crear la solicitud según el modelo
-                        SolicitudAyuda solicitud1 = new SolicitudAyuda(
-                                null, // El ID se generará automáticamente
-                                titulo, // Usamos el título como tema (según el cliente)
-                                descripcion,
-                                new Date(), // Fecha actual
-                                urgencia,
-                                usuarioId
-                        );
-
-                        // Guardar la solicitud (asumiendo que redSocial tiene este método)
-                        boolean exito = redSocial.crearSolicitud(solicitud1);
-
-                        if (exito) {
-                            respuesta.addProperty("exito", true);
-                            respuesta.addProperty("mensaje", "Solicitud creada exitosamente");
-
-                            // Devolver los datos de la solicitud creada
-                            JsonObject solicitudJson = new JsonObject();
-                            solicitudJson.addProperty("id", solicitud1.getId());
-                            solicitudJson.addProperty("tema", solicitud1.getTema());
-                            solicitudJson.addProperty("descripcion", solicitud1.getDescripcion());
-                            solicitudJson.addProperty("fecha", solicitud1.getFecha().getTime());
-                            solicitudJson.addProperty("urgencia", solicitud1.getUrgencia().name());
-                            solicitudJson.addProperty("estado", solicitud1.getEstado().name());
-                            solicitudJson.addProperty("solicitanteId", solicitud1.getSolicitanteId());
-
-                            respuesta.add("solicitud", solicitudJson);
-                        } else {
-                            respuesta.addProperty("exito", false);
-                            respuesta.addProperty("mensaje", "No se pudo crear la solicitud");
-                        }
-
-                    } catch (IllegalArgumentException e) {
-                        respuesta.addProperty("exito", false);
-                        respuesta.addProperty("mensaje", "Error de validación: " + e.getMessage());
-                    } catch (Exception e) {
-                        respuesta.addProperty("exito", false);
-                        respuesta.addProperty("mensaje", "Error interno al crear la solicitud: " + e.getMessage());
-                        e.printStackTrace();
-                    }
-                    break;
-
+                    return manejarCrearSolicitud(datos);
                 case "OBTENER_CONTENIDOS_COMPLETOS":
-                    try {
-                        // Validación robusta de parámetros
-                        if (datos == null || !datos.has("userId") || datos.get("userId").getAsString().isEmpty()) {
-                            throw new IllegalArgumentException("Se requiere un ID de usuario válido");
-                        }
-
-                        String userId = datos.get("userId").getAsString();
-
-                        // Verificar existencia del usuario primero
-                        Usuario usuario = redSocial.buscarUsuario(userId);
-                        if (usuario == null) {
-                            throw new IllegalArgumentException("Usuario no encontrado");
-                        }
-
-                        // Obtener contenidos con manejo de null
-                        List<Contenido> contenidos = redSocial.obtenerTodosContenidos();
-                        if (contenidos == null) {
-                            contenidos = new ArrayList<>(); // Evitar NPE
-                        }
-
-                        // Construcción optimizada del JSON
-                        JsonArray contenidosJson = new JsonArray();
-                        Gson gson1 = new GsonBuilder()
-                                .setDateFormat("yyyy-MM-dd HH:mm:ss")
-                                .create();
-
-                        for (Contenido contenido : contenidos) {
-                            try {
-                                JsonObject contenidoJson = new JsonObject();
-
-                                // Datos básicos con validación
-                                contenidoJson.addProperty("id", contenido.getId() != null ? contenido.getId() : "");
-                                contenidoJson.addProperty("titulo", contenido.getTitulo() != null ? contenido.getTitulo() : "");
-                                contenidoJson.addProperty("autor", contenido.getAutor() != null ? contenido.getAutor() : "");
-                                contenidoJson.addProperty("tema", contenido.getTema() != null ? contenido.getTema() : "General");
-                                contenidoJson.addProperty("descripcion", contenido.getDescripcion() != null ? contenido.getDescripcion() : "");
-                                contenidoJson.addProperty("tipo", contenido.getTipo() != null ? contenido.getTipo().toString() : "TEXTO");
-
-                                // Formatear fecha correctamente
-                                if (contenido.getFecha() != null) {
-                                    contenidoJson.addProperty("fecha", new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(contenido.getFecha()));
-                                } else {
-                                    contenidoJson.addProperty("fecha", "");
-                                }
-
-                                contenidoJson.addProperty("contenido", contenido.getContenido() != null ? contenido.getContenido() : "");
-
-                                // Valoraciones con manejo de null
-                                JsonArray valoracionesJson = new JsonArray();
-                                if (contenido.getValoraciones() != null) {
-                                    for (Valoracion valoracion : contenido.getValoraciones()) {
-                                        if (valoracion != null) {
-                                            JsonObject valoracionJson = new JsonObject();
-                                            valoracionJson.addProperty("usuarioId", valoracion.getUsuarioId() != null ? valoracion.getUsuarioId() : "");
-                                            valoracionJson.addProperty("valor", valoracion.getValor());
-                                            valoracionJson.addProperty("comentario", valoracion.getComentario() != null ? valoracion.getComentario() : "");
-                                            valoracionesJson.add(valoracionJson);
-                                        }
-                                    }
-                                }
-                                contenidoJson.add("valoraciones", valoracionesJson);
-
-                                // Cálculo seguro de promedio
-                                try {
-                                    contenidoJson.addProperty("promedioValoraciones", contenido.obtenerPromedioValoracion());
-                                } catch (Exception e) {
-                                    contenidoJson.addProperty("promedioValoraciones", 0.0);
-                                }
-
-
-                                contenidosJson.add(contenidoJson);
-                            } catch (Exception e) {
-                                System.err.println("Error procesando contenido individual: " + e.getMessage());
-                                continue; // Continuar con el siguiente contenido si hay error en uno
-                            }
-                        }
-
-                        // Construir respuesta exitosa
-                        respuesta.addProperty("exito", true);
-                        respuesta.addProperty("totalContenidos", contenidos.size());
-                        respuesta.add("contenidos", contenidosJson);
-
-                        // Agregar metadatos útiles
-                        JsonObject metadata = new JsonObject();
-                        metadata.addProperty("usuarioId", userId);
-                        metadata.addProperty("usuarioNombre", usuario.getNombre());
-                        metadata.addProperty("fechaConsulta", new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date()));
-                        respuesta.add("metadata", metadata);
-
-                    } catch (IllegalArgumentException e) {
-                        respuesta.addProperty("exito", false);
-                        respuesta.addProperty("errorCode", "INVALID_INPUT");
-                        respuesta.addProperty("mensaje", "Error de validación: " + e.getMessage());
-                    } catch (SecurityException e) {
-                        respuesta.addProperty("exito", false);
-                        respuesta.addProperty("errorCode", "ACCESS_DENIED");
-                        respuesta.addProperty("mensaje", "No autorizado: " + e.getMessage());
-                    } catch (Exception e) {
-                        respuesta.addProperty("exito", false);
-                        respuesta.addProperty("errorCode", "SERVER_ERROR");
-                        respuesta.addProperty("mensaje", "Error interno del servidor");
-                        System.err.println("Error crítico en OBTENER_CONTENIDOS_COMPLETOS: ");
-                        e.printStackTrace();
-                    }
-                    break;
-
-
-
+                    return manejarContenidosCompletos(datos);
+                case "AGREGAR_VALORACION":
+                    return manejarAgregarValoracion(datos);
+                case "OBTENER_VALORACIONES":
+                    return manejarObtenerValoraciones(datos);
+                case "OBTENER_VALORACION":
+                    return manejarObtenerValoracion(datos);
                 default:
-                    respuesta.addProperty("exito", false);
-                    respuesta.addProperty("mensaje", "🚫 Operación no soportada");
+                    return crearRespuestaError("Operación no soportada");
             }
+        } catch (JsonSyntaxException e) {
+            return crearRespuestaError("JSON inválido: " + e.getMessage());
         } catch (Exception e) {
-            respuesta.addProperty("exito", false);
-            respuesta.addProperty("mensaje", "Error procesando solicitud: " + e.getMessage());
             System.err.println("❌ Error procesando solicitud: " + e.getMessage());
-            e.printStackTrace(); // 📌 Imprimir el stacktrace para diagnóstico
+            e.printStackTrace();
+            return crearRespuestaError("Error interno del servidor");
         }
 
+    }
+
+    ///
+    private static JsonObject manejarAgregarValoracion(JsonObject datos) {
+        try {
+            // Validar campos obligatorios
+            if (!datos.has("contenidoId") || !datos.has("usuarioId") ||
+                    !datos.has("puntuacion") || !datos.has("comentario")) {
+                return crearRespuestaError("Faltan campos obligatorios para la valoración");
+            }
+
+            String contenidoId = datos.get("contenidoId").getAsString();
+            String usuarioId = datos.get("usuarioId").getAsString();
+            int puntuacion = datos.get("puntuacion").getAsInt();
+            String comentario = datos.get("comentario").getAsString();
+            String usuarioNombre = datos.has("usuarioNombre") ?
+                    datos.get("usuarioNombre").getAsString() : "Anónimo";
+
+            // Validar rango de puntuación
+            if (puntuacion < 1 || puntuacion > 5) {
+                return crearRespuestaError("La puntuación debe estar entre 1 y 5");
+            }
+
+            // Verificar si el usuario ya valoró este contenido
+            if (redSocial.usuarioYaValoroContenido(usuarioId, contenidoId)) {
+                return crearRespuestaError("Ya has valorado este contenido anteriormente");
+            }
+
+            // Obtener el contenido para extraer tema y descripción
+            Contenido contenido = redSocial.buscarContenido(contenidoId);
+            if (contenido == null) {
+                return crearRespuestaError("Contenido no encontrado");
+            }
+
+            // Crear la valoración según el modelo del servidor
+            Valoracion valoracion = new Valoracion(
+                    null, // ID se generará automáticamente
+                    contenido.getTema(),
+                    contenido.getDescripcion(),
+                    usuarioId,
+                    puntuacion,
+                    new Date(),
+                    comentario
+            );
+
+            // Agregar la valoración al contenido
+            if (redSocial.agregarValoracion(contenidoId, valoracion)) {
+                JsonObject respuesta = crearRespuestaExito("Valoración agregada correctamente");
+
+                // Construir objeto valoración para la respuesta
+                JsonObject valoracionJson = new JsonObject();
+                valoracionJson.addProperty("id", valoracion.getIdValoracion());
+                valoracionJson.addProperty("autor", usuarioNombre);
+                valoracionJson.addProperty("puntuacion", valoracion.getValor());
+                valoracionJson.addProperty("comentario", valoracion.getComentario());
+                valoracionJson.addProperty("fecha", dateFormat.format(valoracion.getFecha()));
+
+                respuesta.add("valoracion", valoracionJson);
+
+                // Incluir el promedio actualizado
+                double promedio = contenido.obtenerPromedioValoracion();
+                respuesta.addProperty("promedio", promedio);
+
+                return respuesta;
+            }
+
+            return crearRespuestaError("No se pudo agregar la valoración");
+        } catch (Exception e) {
+            return crearRespuestaError("Error al agregar valoración: " + e.getMessage());
+        }
+    }
+
+    private static JsonObject manejarObtenerValoraciones(JsonObject datos) {
+        try {
+            if (!datos.has("contenidoId")) {
+                return crearRespuestaError("Se requiere ID de contenido");
+            }
+
+            String contenidoId = datos.get("contenidoId").getAsString();
+            Contenido contenido = redSocial.buscarContenido(contenidoId);
+            if (contenido == null) {
+                return crearRespuestaError("Contenido no encontrado");
+            }
+
+            JsonArray valoracionesJson = new JsonArray();
+            Set<String> idsProcesados = new HashSet<>();
+
+            // Procesar valoraciones del campo 'valoraciones'
+            for (Valoracion valoracion : contenido.getValoraciones()) {
+                if (idsProcesados.add(valoracion.getIdValoracion())) {
+                    JsonObject v = new JsonObject();
+                    v.addProperty("id", valoracion.getIdValoracion());
+
+                    Usuario autor = redSocial.buscarUsuario(valoracion.getIdAutor());
+                    String nombreAutor = autor != null ? autor.getNombre() : "Anónimo";
+
+                    v.addProperty("autor", nombreAutor);
+                    v.addProperty("puntuacion", valoracion.getValor());
+                    v.addProperty("comentario", valoracion.getComentario());
+                    v.addProperty("fecha", dateFormat.format(valoracion.getFecha()));
+                    valoracionesJson.add(v);
+                }
+            }
+
+            // Si no hay valoraciones en el campo 'valoraciones', pero sí en 'contenido'
+            if (valoracionesJson.size() == 0 && contenido.getContenido() != null &&
+                    contenido.getContenido().contains("~")) {
+
+                // Parsear valoraciones del campo 'contenido'
+                String[] valoracionesStr = contenido.getContenido().split("\\|");
+                for (String valoracionStr : valoracionesStr) {
+                    if (valoracionStr.trim().isEmpty()) continue;
+
+                    String[] partes = valoracionStr.split("~");
+                    if (partes.length >= 7) {
+                        JsonObject v = new JsonObject();
+                        v.addProperty("id", partes[0]);
+                        v.addProperty("autor", "Usuario " + partes[3]); // ID como nombre temporal
+                        v.addProperty("puntuacion", Integer.parseInt(partes[4]));
+                        v.addProperty("comentario", partes[6]);
+                        v.addProperty("fecha", new SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
+                                .format(new Date(Long.parseLong(partes[5]))));
+
+                        valoracionesJson.add(v);
+                    }
+                }
+            }
+
+            JsonObject respuesta = crearRespuestaExito("Valoraciones obtenidas");
+            respuesta.add("valoraciones", valoracionesJson);
+            respuesta.addProperty("total", valoracionesJson.size());
+            respuesta.addProperty("promedio", calcularPromedio(valoracionesJson));
+            return respuesta;
+        } catch (Exception e) {
+            return crearRespuestaError("Error al obtener valoraciones: " + e.getMessage());
+        }
+    }
+
+    private static double calcularPromedio(JsonArray valoraciones) {
+        if (valoraciones.size() == 0) return 0.0;
+
+        double suma = 0;
+        for (JsonElement element : valoraciones) {
+            suma += element.getAsJsonObject().get("puntuacion").getAsInt();
+        }
+        return suma / valoraciones.size();
+    }
+
+    private static JsonObject manejarObtenerValoracion(JsonObject datos) {
+        try {
+            if (!datos.has("contenidoId")) {
+                return crearRespuestaError("Se requiere ID de contenido");
+            }
+
+            String contenidoId = datos.get("contenidoId").getAsString();
+            Contenido contenido = redSocial.buscarContenido(contenidoId);
+            if (contenido == null) {
+                return crearRespuestaError("Contenido no encontrado");
+            }
+
+            JsonObject respuesta = crearRespuestaExito("Estadísticas de valoración obtenidas");
+            respuesta.addProperty("promedio", contenido.obtenerPromedioValoracion());
+            respuesta.addProperty("total", contenido.getValoraciones().size());
+            return respuesta;
+        } catch (Exception e) {
+            return crearRespuestaError("Error al obtener valoraciones: " + e.getMessage());
+        }
+    }
+    ///
+
+    // Métodos de manejo de solicitudes específicas
+    private static JsonObject manejarRegistro(JsonObject datos) {
+        try {
+            Estudiante estudiante = gson.fromJson(datos, Estudiante.class);
+
+            if (estudiante.getNombre() == null || estudiante.getCorreo() == null) {
+                return crearRespuestaError("Nombre y correo son obligatorios");
+            }
+
+            if (redSocial.registrarUsuario(estudiante)) {
+                return crearRespuestaExito("Registro exitoso");
+            }
+            return crearRespuestaError("El correo ya está registrado");
+        } catch (Exception e) {
+            return crearRespuestaError("Error en registro: " + e.getMessage());
+        }
+    }
+
+    private static JsonObject manejarLogin(JsonObject datos) {
+        try {
+            if (!datos.has("correo") || !datos.has("contrasena")) {
+                return crearRespuestaError("Falta correo o contraseña");
+            }
+
+            String correo = datos.get("correo").getAsString().trim();
+            String contrasena = datos.get("contrasena").getAsString();
+
+            if (correo.isEmpty() || contrasena.isEmpty()) {
+                return crearRespuestaError("Correo y contraseña son obligatorios");
+            }
+
+            if (!correo.matches("^[\\w-\\.]+@([\\w-]+\\.)+[\\w-]{2,4}$")) {
+                return crearRespuestaError("Formato de correo inválido");
+            }
+
+            Usuario usuario = redSocial.iniciarSesion(correo, contrasena);
+            if (usuario == null) {
+                Thread.sleep(200); // Prevención timing attack
+                return crearRespuestaError("Credenciales inválidas");
+            }
+
+            JsonObject respuesta = crearRespuestaExito("Bienvenido " + usuario.getNombre());
+            respuesta.add("usuario", gson.toJsonTree(usuario));
+            respuesta.addProperty("token", generarToken(usuario.getId()));
+            return respuesta;
+        } catch (Exception e) {
+            return crearRespuestaError("Error en login: " + e.getMessage());
+        }
+    }
+
+    private static JsonObject manejarObtenerContenidos() {
+        try {
+            List<Contenido> contenidos = redSocial.obtenerTodosContenidos();
+            JsonArray contenidosJson = new JsonArray();
+
+            for (Contenido contenido : contenidos) {
+                JsonObject contenidoJson = new JsonObject();
+                contenidoJson.addProperty("id", contenido.getId());
+                contenidoJson.addProperty("titulo", contenido.getTitulo());
+                contenidoJson.addProperty("autor", contenido.getAutor());
+                contenidoJson.addProperty("tema", contenido.getTema());
+                contenidoJson.addProperty("descripcion", contenido.getDescripcion());
+                contenidoJson.addProperty("tipo", contenido.getTipo().name());
+
+                // FIX: Manejo seguro de fechas
+                try {
+                    if (contenido.getFecha() != null) {
+                        // Reemplaza el bloque de fecha con:
+                        contenidoJson.addProperty("fechaCreacion", contenido.getFecha().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+                    } else {
+                        contenidoJson.addProperty("fechaCreacion", dateFormat.format(new Date()));
+                    }
+                } catch (Exception e) {
+                    // Si hay error formateando la fecha, usar fecha actual
+                    contenidoJson.addProperty("fechaCreacion", dateFormat.format(new Date()));
+                    System.err.println("Error al formatear fecha: " + e.getMessage());
+                }
+
+                contenidoJson.addProperty("contenido", contenido.getContenido());
+
+                JsonArray valoracionesJson = new JsonArray();
+                for (Valoracion valoracion : contenido.getValoraciones()) {
+                    JsonObject v = new JsonObject();
+                    v.addProperty("usuarioId", valoracion.getUsuarioId());
+                    v.addProperty("valor", valoracion.getValor());
+                    v.addProperty("comentario", valoracion.getComentario());
+                    valoracionesJson.add(v);
+                }
+                contenidoJson.add("valoraciones", valoracionesJson);
+
+                contenidosJson.add(contenidoJson);
+            }
+
+            JsonObject respuesta = crearRespuestaExito("Contenidos obtenidos");
+            respuesta.add("contenidos", contenidosJson);
+            return respuesta;
+        } catch (Exception e) {
+            return crearRespuestaError("Error al obtener contenidos: " + e.getMessage());
+        }
+    }
+
+    private static JsonObject manejarObtenerSolicitudes() {
+        try {
+            List<SolicitudAyuda> solicitudes = redSocial.obtenerTodasSolicitudes();
+            JsonArray jsonSolicitudes = new JsonArray();
+
+            for (SolicitudAyuda solicitud : solicitudes) {
+                JsonObject jsonSolicitud = new JsonObject();
+                jsonSolicitud.addProperty("id", solicitud.getId());
+                jsonSolicitud.addProperty("tema", solicitud.getTema());
+                jsonSolicitud.addProperty("descripcion", solicitud.getDescripcion());
+
+                // FIX: Manejo seguro de fechas
+// FIX: Manejo seguro de fechas
+                try {
+                    if (solicitud.getFecha() != null) {
+                        jsonSolicitud.addProperty("fecha", dateFormat.format(solicitud.getFecha()));
+                    } else {
+                        jsonSolicitud.addProperty("fecha", dateFormat.format(new Date()));
+                    }
+                } catch (Exception e) {
+                    // Si hay error formateando la fecha, usar fecha actual
+                    jsonSolicitud.addProperty("fecha", dateFormat.format(new Date()));
+                    System.err.println("Error al formatear fecha: " + e.getMessage());
+                }
+
+                jsonSolicitud.addProperty("urgencia", solicitud.getUrgencia().name());
+                jsonSolicitud.addProperty("estado", solicitud.getEstado().name());
+                jsonSolicitud.addProperty("solicitanteId", solicitud.getSolicitanteId());
+
+                Usuario solicitante = redSocial.buscarUsuario(solicitud.getSolicitanteId());
+                jsonSolicitud.addProperty("solicitanteNombre",
+                        solicitante != null ? solicitante.getNombre() : "Desconocido");
+
+                jsonSolicitudes.add(jsonSolicitud);
+            }
+
+            JsonObject respuesta = crearRespuestaExito("Solicitudes obtenidas");
+            respuesta.add("solicitudes", jsonSolicitudes);
+            return respuesta;
+        } catch (Exception e) {
+            return crearRespuestaError("Error al obtener solicitudes: " + e.getMessage());
+        }
+    }
+
+    private static JsonObject manejarActualizarUsuario(JsonObject datos) {
+        try {
+            if (!datos.has("id")) {
+                return crearRespuestaError("Falta el ID del usuario");
+            }
+
+            String id = datos.get("id").getAsString();
+            Usuario usuario = redSocial.buscarUsuario(id);
+            if (usuario == null) {
+                return crearRespuestaError("Usuario no encontrado");
+            }
+
+            if (datos.has("nombre")) usuario.setNombre(datos.get("nombre").getAsString());
+            if (datos.has("email")) usuario.setCorreo(datos.get("email").getAsString());
+            if (datos.has("password")) usuario.setContrasenia(datos.get("password").getAsString());
+
+            if (redSocial.actualizarUsuario(usuario)) {
+                JsonObject respuesta = crearRespuestaExito("Datos actualizados");
+                respuesta.add("usuario", gson.toJsonTree(usuario));
+                return respuesta;
+            }
+            return crearRespuestaError("No se pudo actualizar el usuario");
+        } catch (Exception e) {
+            return crearRespuestaError("Error al actualizar usuario: " + e.getMessage());
+        }
+    }
+
+    private static JsonObject manejarEliminarUsuario(JsonObject datos) {
+        try {
+            String usuarioId = datos.has("usuarioId") ? datos.get("usuarioId").getAsString() : datos.get("id").getAsString();
+
+            if (redSocial.eliminarUsuario(usuarioId)) {
+                return crearRespuestaExito("Cuenta eliminada correctamente");
+            }
+            return crearRespuestaError("No se pudo eliminar el usuario");
+        } catch (Exception e) {
+            return crearRespuestaError("Error al eliminar usuario: " + e.getMessage());
+        }
+    }
+
+    private static JsonObject manejarObtenerUsuario(JsonObject datos) {
+        try {
+            if (!datos.has("id")) {
+                return crearRespuestaError("Falta el ID del usuario");
+            }
+
+            String idUsuario = datos.get("id").getAsString();
+            Usuario usuario = redSocial.buscarUsuario(idUsuario);
+            if (usuario == null) {
+                return crearRespuestaError("Usuario no encontrado");
+            }
+
+            JsonObject usuarioJson = new JsonObject();
+            usuarioJson.addProperty("id", usuario.getId());
+            usuarioJson.addProperty("nombre", usuario.getNombre());
+            usuarioJson.addProperty("email", usuario.getCorreo());
+
+            JsonObject respuesta = crearRespuestaExito("Usuario obtenido");
+            respuesta.add("usuario", usuarioJson);
+            return respuesta;
+        } catch (Exception e) {
+            return crearRespuestaError("Error al obtener usuario: " + e.getMessage());
+        }
+    }
+
+    private static JsonObject manejarDatosModerador(JsonObject datos) {
+        try {
+            if (!datos.has("userId")) {
+                return crearRespuestaError("Falta el ID del usuario");
+            }
+
+            String userId = datos.get("userId").getAsString();
+            Usuario usuario = redSocial.buscarUsuario(userId);
+            if (usuario == null) {
+                return crearRespuestaError("Usuario no encontrado");
+            }
+
+            if (!(usuario instanceof Moderador)) {
+                return crearRespuestaError("El usuario no tiene permisos de moderador");
+            }
+
+            JsonObject datosModerador = new JsonObject();
+            datosModerador.addProperty("id", usuario.getId());
+            datosModerador.addProperty("nombres", usuario.getNombre());
+            datosModerador.addProperty("correo", usuario.getCorreo());
+            datosModerador.addProperty("totalUsuarios", redSocial.obtenerTotalUsuarios());
+            datosModerador.addProperty("totalContenidos", redSocial.obtenerTotalContenidos());
+            datosModerador.addProperty("totalSolicitudes", redSocial.obtenerTotalSolicitudes());
+
+            JsonObject respuesta = crearRespuestaExito("Datos de moderador obtenidos");
+            respuesta.add("datosUsuario", datosModerador);
+            return respuesta;
+        } catch (Exception e) {
+            return crearRespuestaError("Error al obtener datos de moderador: " + e.getMessage());
+        }
+    }
+
+    private static JsonObject manejarDatosPerfil(JsonObject datos) {
+        try {
+            if (!datos.has("userId") || datos.get("userId").getAsString().isEmpty()) {
+                return crearRespuestaError("Falta el ID del usuario");
+            }
+
+            String userId = datos.get("userId").getAsString();
+            Usuario usuario = redSocial.buscarUsuario(userId);
+            if (usuario == null) {
+                return crearRespuestaError("Usuario no encontrado");
+            }
+
+            JsonObject datosPerfil = new JsonObject();
+            datosPerfil.addProperty("id", usuario.getId());
+            datosPerfil.addProperty("nombres", usuario.getNombre());
+            datosPerfil.addProperty("correo", usuario.getCorreo());
+
+            if (usuario instanceof Estudiante) {
+                Estudiante estudiante = (Estudiante) usuario;
+                String interesesStr = String.join(", ", estudiante.getIntereses());
+                datosPerfil.addProperty("intereses", interesesStr);
+            } else {
+                datosPerfil.addProperty("intereses", "");
+            }
+
+            JsonArray gruposArray = new JsonArray();
+            for (String grupo : redSocial.obtenerGruposEstudio(userId)) {
+                gruposArray.add(grupo);
+            }
+            datosPerfil.add("gruposEstudio", gruposArray);
+
+            datosPerfil.addProperty("contenidosPublicados", redSocial.obtenerTotalContenidosUsuario(userId));
+            datosPerfil.addProperty("solicitudesPublicadas", redSocial.obtenerTotalSolicitudesUsuario(userId));
+
+            JsonObject respuesta = crearRespuestaExito("Datos de perfil obtenidos");
+            respuesta.add("datosUsuario", datosPerfil);
+            return respuesta;
+        } catch (Exception e) {
+            return crearRespuestaError("Error al obtener datos de perfil: " + e.getMessage());
+        }
+    }
+
+    private static JsonObject manejarActualizarDatosUsuario(JsonObject datos) {
+        try {
+            if (!datos.has("id")) {
+                return crearRespuestaError("Falta el ID del usuario");
+            }
+
+            String userId = datos.get("id").getAsString();
+            Usuario usuario = redSocial.buscarUsuario(userId);
+            if (usuario == null) {
+                return crearRespuestaError("Usuario no encontrado");
+            }
+
+            if (datos.has("nombres")) usuario.setNombre(datos.get("nombres").getAsString());
+            if (datos.has("correo")) usuario.setCorreo(datos.get("correo").getAsString());
+            if (datos.has("intereses") && usuario instanceof Estudiante) {
+                Estudiante estudiante = (Estudiante) usuario;
+                LinkedList<String> intereses = new LinkedList<>(
+                        Arrays.asList(datos.get("intereses").getAsString().split("\\s*,\\s*")));
+                estudiante.setIntereses(intereses);
+            }
+            if (datos.has("contrasena")) usuario.setContrasenia(datos.get("contrasena").getAsString());
+
+            if (redSocial.actualizarUsuario(usuario)) {
+                JsonObject respuesta = crearRespuestaExito("Datos actualizados correctamente");
+                respuesta.add("usuario", gson.toJsonTree(usuario));
+                return respuesta;
+            }
+            return crearRespuestaError("No se pudo actualizar el usuario");
+        } catch (Exception e) {
+            return crearRespuestaError("Error al actualizar usuario: " + e.getMessage());
+        }
+    }
+
+    private static JsonObject manejarCrearPublicacion(JsonObject datos) {
+        try {
+            if (!datos.has("usuarioId") || !datos.has("titulo") ||
+                    !datos.has("tipoContenido") || !datos.has("contenido")) {
+                return crearRespuestaError("Faltan campos obligatorios");
+            }
+
+            String usuarioId = datos.get("usuarioId").getAsString();
+            String titulo = datos.get("titulo").getAsString();
+            String descripcion = datos.has("descripcion") ? datos.get("descripcion").getAsString() : "";
+            String tema = datos.has("tema") ? datos.get("tema").getAsString() : "General";
+            TipoContenido tipo = TipoContenido.valueOf(datos.get("tipoContenido").getAsString());
+            String contenidoRuta = datos.get("contenido").getAsString();
+
+            if (tipo == TipoContenido.ENLACE && !contenidoRuta.matches("^(https?|ftp)://.*")) {
+                return crearRespuestaError("Formato de enlace inválido");
+            }
+
+            if (redSocial.crearContenido(usuarioId, titulo, descripcion, tipo, tema, contenidoRuta)) {
+                JsonObject publicacionJson = new JsonObject();
+                publicacionJson.addProperty("id", usuarioId + "-" + System.currentTimeMillis());
+                publicacionJson.addProperty("titulo", titulo);
+                publicacionJson.addProperty("tipo", tipo.name());
+                publicacionJson.addProperty("tema", tema);
+                publicacionJson.addProperty("fecha", LocalDateTime.now().toString());
+                publicacionJson.addProperty("contenido", contenidoRuta);
+
+                JsonObject respuesta = crearRespuestaExito("Publicación creada exitosamente");
+                respuesta.add("publicacion", publicacionJson);
+                return respuesta;
+            }
+            return crearRespuestaError("No se pudo crear la publicación");
+        } catch (Exception e) {
+            return crearRespuestaError("Error al crear publicación: " + e.getMessage());
+        }
+    }
+
+    private static JsonObject manejarCrearSolicitud(JsonObject datos) {
+        try {
+            if (!datos.has("usuarioId") || !datos.has("titulo") ||
+                    !datos.has("tema") || !datos.has("descripcion") ||
+                    !datos.has("urgencia")) {
+                return crearRespuestaError("Faltan campos obligatorios");
+            }
+
+            String usuarioId = datos.get("usuarioId").getAsString();
+            String titulo = datos.get("titulo").getAsString();
+            String tema = datos.get("tema").getAsString();
+            String descripcion = datos.get("descripcion").getAsString();
+            Urgencia urgencia = Urgencia.valueOf(datos.get("urgencia").getAsString().toUpperCase());
+
+            Usuario usuario = redSocial.buscarUsuario(usuarioId);
+            if (usuario == null) {
+                return crearRespuestaError("Usuario no encontrado");
+            }
+
+            SolicitudAyuda solicitud = new SolicitudAyuda(
+                    null, titulo, descripcion, new Date(), urgencia, usuarioId
+            );
+
+            if (redSocial.crearSolicitud(solicitud)) {
+                JsonObject solicitudJson = new JsonObject();
+                solicitudJson.addProperty("id", solicitud.getId());
+                solicitudJson.addProperty("tema", solicitud.getTema());
+                solicitudJson.addProperty("descripcion", solicitud.getDescripcion());
+
+                // FIX: Manejo seguro de fechas
+                try {
+                    if (solicitud.getFecha() != null) {
+                        solicitudJson.addProperty("fecha", dateFormat.format(solicitud.getFecha()));
+                    } else {
+                        solicitudJson.addProperty("fecha", dateFormat.format(new Date()));
+                    }
+                } catch (Exception e) {
+                    solicitudJson.addProperty("fecha", dateFormat.format(new Date()));
+                }
+
+                solicitudJson.addProperty("urgencia", solicitud.getUrgencia().name());
+                solicitudJson.addProperty("estado", solicitud.getEstado().name());
+                solicitudJson.addProperty("solicitanteId", solicitud.getSolicitanteId());
+
+                JsonObject respuesta = crearRespuestaExito("Solicitud creada exitosamente");
+                respuesta.add("solicitud", solicitudJson);
+                return respuesta;
+            }
+            return crearRespuestaError("No se pudo crear la solicitud");
+        } catch (Exception e) {
+            return crearRespuestaError("Error al crear solicitud: " + e.getMessage());
+        }
+    }
+
+    private static JsonObject manejarContenidosCompletos(JsonObject datos) {
+        try {
+            if (!datos.has("userId") || datos.get("userId").getAsString().isEmpty()) {
+                return crearRespuestaError("Se requiere un ID de usuario válido");
+            }
+
+            String userId = datos.get("userId").getAsString();
+            Usuario usuario = redSocial.buscarUsuario(userId);
+            if (usuario == null) {
+                return crearRespuestaError("Usuario no encontrado");
+            }
+
+            List<Contenido> contenidos = redSocial.obtenerTodosContenidos();
+            if (contenidos == null) {
+                contenidos = new ArrayList<>();
+            }
+
+            JsonArray contenidosJson = new JsonArray();
+            for (Contenido contenido : contenidos) {
+                try {
+                    JsonObject contenidoJson = new JsonObject();
+                    contenidoJson.addProperty("id", contenido.getId() != null ? contenido.getId() : "");
+                    contenidoJson.addProperty("titulo", contenido.getTitulo() != null ? contenido.getTitulo() : "");
+                    contenidoJson.addProperty("autor", contenido.getAutor() != null ? contenido.getAutor() : "");
+                    contenidoJson.addProperty("tema", contenido.getTema() != null ? contenido.getTema() : "General");
+                    contenidoJson.addProperty("descripcion", contenido.getDescripcion() != null ? contenido.getDescripcion() : "");
+                    contenidoJson.addProperty("tipo", contenido.getTipo() != null ? contenido.getTipo().toString() : "TEXTO");
+
+                    // FIX: Manejo seguro de fechas
+                    try {
+                        if (contenido.getFecha() != null) {
+                            contenidoJson.addProperty("fecha", dateFormat.format(contenido.getFecha()));
+                        } else {
+                            contenidoJson.addProperty("fecha", "");
+                        }
+                    } catch (Exception e) {
+                        contenidoJson.addProperty("fecha", "");
+                        System.err.println("Error al formatear fecha: " + e.getMessage());
+                    }
+
+                    contenidoJson.addProperty("contenido", contenido.getContenido() != null ? contenido.getContenido() : "");
+
+                    JsonArray valoracionesJson = new JsonArray();
+                    if (contenido.getValoraciones() != null) {
+                        for (Valoracion valoracion : contenido.getValoraciones()) {
+                            if (valoracion != null) {
+                                JsonObject valoracionJson = new JsonObject();
+                                valoracionJson.addProperty("usuarioId", valoracion.getUsuarioId() != null ? valoracion.getUsuarioId() : "");
+                                valoracionJson.addProperty("valor", valoracion.getValor());
+                                valoracionJson.addProperty("comentario", valoracion.getComentario() != null ? valoracion.getComentario() : "");
+                                valoracionesJson.add(valoracionJson);
+                            }
+                        }
+                    }
+                    contenidoJson.add("valoraciones", valoracionesJson);
+                    contenidoJson.addProperty("promedioValoraciones", contenido.obtenerPromedioValoracion());
+                    contenidosJson.add(contenidoJson);
+                } catch (Exception e) {
+                    System.err.println("Error procesando contenido individual: " + e.getMessage());
+                    continue;
+                }
+            }
+
+            JsonObject metadata = new JsonObject();
+            metadata.addProperty("usuarioId", userId);
+            metadata.addProperty("usuarioNombre", usuario.getNombre());
+            metadata.addProperty("fechaConsulta", dateFormat.format(new Date()));
+
+            JsonObject respuesta = crearRespuestaExito("Contenidos completos obtenidos");
+            respuesta.addProperty("totalContenidos", contenidos.size());
+            respuesta.add("contenidos", contenidosJson);
+            respuesta.add("metadata", metadata);
+            return respuesta;
+        } catch (Exception e) {
+            return crearRespuestaError("Error al obtener contenidos completos: " + e.getMessage());
+        }
+    }
+
+    // Métodos auxiliares
+    private static JsonObject crearRespuestaExito(String mensaje) {
+        JsonObject respuesta = new JsonObject();
+        respuesta.addProperty("exito", true);
+        respuesta.addProperty("mensaje", mensaje);
         return respuesta;
     }
 
+    private static JsonObject crearRespuestaError(String mensaje) {
+        JsonObject respuesta = new JsonObject();
+        respuesta.addProperty("exito", false);
+        respuesta.addProperty("mensaje", mensaje);
+        return respuesta;
+    }
+
+
+
     private static String generarToken(String userId) {
-        // Implementación básica de generación de token
-        // Para producción, usa una librería como JJWT
-
-        long tiempoExpiracion = System.currentTimeMillis() + 3600000; // 1 hora de validez
+        long tiempoExpiracion = System.currentTimeMillis() + 3600000; // 1 hora
         String datosToken = userId + "|" + tiempoExpiracion;
-
-        // En un entorno real, deberías usar un secreto seguro y hashing
         return Base64.getEncoder().encodeToString(datosToken.getBytes());
     }
+
+    private static class LocalDateTimeAdapter implements JsonSerializer<LocalDateTime>, JsonDeserializer<LocalDateTime> {
+        private final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+
+        @Override
+        public LocalDateTime deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context) {
+            return LocalDateTime.parse(json.getAsString(), formatter);
+        }
+
+        @Override
+        public JsonElement serialize(LocalDateTime src, Type typeOfSrc, JsonSerializationContext context) {
+            return new JsonPrimitive(formatter.format(src));
+        }
+    }
+
+
+
 }
