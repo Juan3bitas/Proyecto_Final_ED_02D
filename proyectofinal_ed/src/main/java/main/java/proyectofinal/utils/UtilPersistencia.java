@@ -219,6 +219,10 @@ public class UtilPersistencia {
     public boolean guardarContenido(Contenido cont) {
         try {
             utilLog.escribirLog("Guardando contenido: " + cont.getTitulo(), Level.INFO);
+
+            // Eliminar contenido existente con el mismo ID para evitar duplicados
+            listaContenidosCache.removeIf(c -> c.getId().equals(cont.getId()));
+
             listaContenidosCache.add(cont);
             guardarTodosContenidos();
             return true;
@@ -237,6 +241,54 @@ public class UtilPersistencia {
         } catch (Exception e) {
             utilLog.escribirLog("Error actualizando contenido: " + e.getMessage(), Level.SEVERE);
         }
+    }
+
+    public boolean agregarValoracion(String contenidoId, Valoracion valoracion) {
+        try {
+            // 1. Buscar el contenido existente
+            Contenido contenido = buscarContenidoPorId(contenidoId);
+            if (contenido == null) {
+                return false;
+            }
+
+            // 2. Verificar si el usuario ya valoró este contenido
+            if (contenido.getValoraciones().stream()
+                    .anyMatch(v -> v.getIdAutor().equals(valoracion.getIdAutor()))) {
+                return false;
+            }
+
+            // 4. Agregar la valoración
+            contenido.getValoraciones().add(valoracion);
+
+            // 5. Actualizar el contenido en la persistencia
+            actualizarContenido(contenido);
+
+            return true;
+        } catch (Exception e) {
+            utilLog.escribirLog("Error agregando valoración: " + e.getMessage(), Level.SEVERE);
+            return false;
+        }
+    }
+
+    public double calcularPromedioValoraciones(String contenidoId) {
+        Contenido contenido = buscarContenidoPorId(contenidoId);
+        if (contenido == null || contenido.getValoraciones().isEmpty()) {
+            return 0.0;
+        }
+
+        // Filtrar valoraciones duplicadas
+        Set<String> idsValoraciones = new HashSet<>();
+        double suma = 0;
+        int contador = 0;
+
+        for (Valoracion v : contenido.getValoraciones()) {
+            if (idsValoraciones.add(v.getIdValoracion())) {
+                suma += v.getValor();
+                contador++;
+            }
+        }
+
+        return contador > 0 ? suma / contador : 0.0;
     }
 
     public List<Contenido> obtenerContenidosPorUsuario(String idEstudiante) {
@@ -493,6 +545,19 @@ public class UtilPersistencia {
     }
 
     private String contenidoToCsv(Contenido contenido) {
+        // Primero guardamos los campos básicos del contenido
+        String[] camposBasicos = {
+                contenido.getId(),
+                escapeCsv(contenido.getTitulo()),
+                escapeCsv(contenido.getAutor()),
+                contenido.getFecha().toString(),
+                contenido.getTipo().name(),
+                escapeCsv(contenido.getDescripcion()),
+                escapeCsv(contenido.getTema()),
+                escapeCsv(contenido.getContenido()) // Este es el campo importante para la ruta/imagen
+        };
+
+        // Luego procesamos las valoraciones por separado
         String valoracionesStr = contenido.getValoraciones().stream()
                 .map(v -> String.join("~",
                         v.getIdValoracion(),
@@ -505,16 +570,8 @@ public class UtilPersistencia {
                 ))
                 .collect(Collectors.joining("|"));
 
-        return String.join("§",
-                contenido.getId(),
-                contenido.getTitulo(),
-                contenido.getAutor(),
-                contenido.getFecha().toString(),
-                contenido.getTipo().name(),
-                contenido.getDescripcion(),
-                contenido.getTema(),
-                valoracionesStr
-        );
+        // Unimos todo con un separador diferente para evitar confusiones
+        return String.join("§", camposBasicos) + "§VALORACIONES§" + valoracionesStr;
     }
 
     private String solicitudToCsv(SolicitudAyuda solicitud) {
@@ -647,49 +704,44 @@ public class UtilPersistencia {
     }
 
     private Contenido parsearContenido(String csv) {
-        // Verificar si la línea está vacía
         if (csv == null || csv.trim().isEmpty()) {
             System.out.println("⚠️ Línea vacía encontrada");
             return null;
         }
 
-        String[] partes = csv.split("§");
+        // Dividir primero por el separador de valoraciones
+        String[] partes = csv.split("§VALORACIONES§");
+        String parteContenido = partes[0];
+        String parteValoraciones = partes.length > 1 ? partes[1] : "";
 
-        // Verificar que tenemos al menos los 8 campos obligatorios
-        if (partes.length < 8) {
-            System.out.println("❌ Formato incorrecto. Campos esperados: 8, encontrados: " + partes.length);
-            System.out.println("Línea problemática: " + csv);
+        // Parsear el contenido principal
+        String[] camposContenido = parteContenido.split("§");
+        if (camposContenido.length < 8) {
+            System.out.println("❌ Formato incorrecto. Campos esperados: 8, encontrados: " + camposContenido.length);
             return null;
         }
 
         try {
             // Parsear campos obligatorios
-            String id = partes[0].trim();
-            String titulo = partes[1].trim();
-            String autor = partes[2].trim();
-            LocalDateTime fecha = LocalDateTime.parse(partes[3].trim());
-            TipoContenido tipo = TipoContenido.valueOf(partes[4].trim());
-            String descripcion = partes[5].trim();
-            String tema = partes[6].trim();
-            String contenidoStr = partes[7].trim(); // El contenido puede estar vacío pero no null
+            String id = camposContenido[0].trim();
+            String titulo = camposContenido[1].trim();
+            String autor = camposContenido[2].trim();
+            LocalDateTime fecha = LocalDateTime.parse(camposContenido[3].trim());
+            TipoContenido tipo = TipoContenido.valueOf(camposContenido[4].trim());
+            String descripcion = camposContenido[5].trim();
+            String tema = camposContenido[6].trim();
+            String contenidoStr = camposContenido[7].trim(); // Ruta de la imagen/contenido
 
-            // Manejar valoraciones (campo opcional)
+            // Parsear valoraciones
             LinkedList<Valoracion> valoraciones = new LinkedList<>();
-            if (partes.length > 8 && !partes[8].trim().isEmpty()) {
-                valoraciones = Arrays.stream(partes[8].split("\\|"))
+            if (!parteValoraciones.isEmpty()) {
+                valoraciones = Arrays.stream(parteValoraciones.split("\\|"))
                         .filter(s -> !s.trim().isEmpty())
                         .map(this::parseValoracion)
-                        .filter(Objects::nonNull) // Filtrar valoraciones nulas
+                        .filter(Objects::nonNull)
                         .collect(Collectors.toCollection(LinkedList::new));
             }
 
-            // Validar campos obligatorios no vacíos
-            if (id.isEmpty() || titulo.isEmpty() || autor.isEmpty() || descripcion.isEmpty() || tema.isEmpty()) {
-                System.out.println("❌ Campos obligatorios vacíos en línea: " + csv);
-                return null;
-            }
-
-            // Crear el objeto Contenido
             return new Contenido(
                     id,
                     titulo,
@@ -698,13 +750,12 @@ public class UtilPersistencia {
                     tipo,
                     descripcion,
                     tema,
-                    contenidoStr, // Acepta cadena vacía pero no null
+                    contenidoStr, // Ruta preservada correctamente
                     valoraciones
             );
 
         } catch (Exception e) {
-            System.out.println("🔥 Error al parsear línea: " + csv);
-            System.out.println("Excepción: " + e.getClass().getSimpleName() + ": " + e.getMessage());
+            System.out.println("🔥 Error al parsear contenido: " + e.getMessage());
             return null;
         }
     }

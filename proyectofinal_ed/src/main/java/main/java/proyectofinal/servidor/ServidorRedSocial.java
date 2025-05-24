@@ -43,6 +43,83 @@ public class ServidorRedSocial {
         }
     }
 
+    private static JsonObject manejarBuscarContenido(JsonObject datos) {
+        try {
+            if (!datos.has("criterio") || !datos.has("busqueda")) {
+                return crearRespuestaError("Faltan criterios de búsqueda");
+            }
+
+            String criterio = datos.get("criterio").getAsString();
+            String busqueda = datos.get("busqueda").getAsString().toLowerCase();
+
+            List<Contenido> contenidos = redSocial.obtenerTodosContenidos();
+            JsonArray resultados = new JsonArray();
+
+            SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+
+            for (Contenido contenido : contenidos) {
+                boolean coincide = false;
+
+                switch (criterio) {
+                    case "Tema":
+                        coincide = contenido.getTema().toLowerCase().contains(busqueda);
+                        break;
+                    case "Autor":
+                        coincide = contenido.getAutor().toLowerCase().contains(busqueda);
+                        break;
+                    case "Tipo":
+                        coincide = contenido.getTipo().name().toLowerCase().contains(busqueda);
+                        break;
+                    case "Fecha":
+                        try {
+                            // Intentar parsear la fecha de búsqueda
+                            Date fechaBusqueda = dateFormat.parse(busqueda);
+                            // Comparar con la fecha del contenido
+                            coincide = dateFormat.format(contenido.getFecha()).contains(busqueda);
+                        } catch (Exception e) {
+                            // Si no se puede parsear, buscar como string
+                            coincide = dateFormat.format(contenido.getFecha()).toLowerCase().contains(busqueda);
+                        }
+                        break;
+                    default:
+                        // Búsqueda general en todos los campos
+                        coincide = contenido.getTitulo().toLowerCase().contains(busqueda) ||
+                                contenido.getAutor().toLowerCase().contains(busqueda) ||
+                                contenido.getTema().toLowerCase().contains(busqueda) ||
+                                contenido.getTipo().name().toLowerCase().contains(busqueda) ||
+                                dateFormat.format(contenido.getFecha()).toLowerCase().contains(busqueda);
+                }
+
+                if (coincide) {
+                    JsonObject contenidoJson = new JsonObject();
+                    contenidoJson.addProperty("id", contenido.getId());
+                    contenidoJson.addProperty("titulo", contenido.getTitulo());
+                    contenidoJson.addProperty("autor", contenido.getAutor());
+                    contenidoJson.addProperty("tema", contenido.getTema());
+                    contenidoJson.addProperty("descripcion", contenido.getDescripcion());
+                    contenidoJson.addProperty("tipo", contenido.getTipo().name());
+
+                    // Manejo seguro de fechas
+                    try {
+                        contenidoJson.addProperty("fechaCreacion", dateFormat.format(contenido.getFecha()));
+                    } catch (Exception e) {
+                        contenidoJson.addProperty("fechaCreacion", "Fecha no disponible");
+                    }
+
+                    contenidoJson.addProperty("contenido", contenido.getContenido());
+                    resultados.add(contenidoJson);
+                }
+            }
+
+            JsonObject respuesta = crearRespuestaExito("Búsqueda completada");
+            respuesta.add("resultados", resultados);
+            return respuesta;
+        } catch (Exception e) {
+            LOGGER.log(Level.SEVERE, "Error en búsqueda de contenidos", e);
+            return crearRespuestaError("Error en búsqueda: " + e.getMessage());
+        }
+    }
+
     private static void manejarCliente(Socket socket) {
         String clienteIp = socket.getInetAddress().getHostAddress();
         System.out.println("🔗 Cliente conectado desde: " + clienteIp);
@@ -118,6 +195,8 @@ public class ServidorRedSocial {
                     return manejarObtenerValoraciones(datos);
                 case "OBTENER_VALORACION":
                     return manejarObtenerValoracion(datos);
+                case "BUSCAR_CONTENIDO":
+                    return manejarBuscarContenido(datos);
                 default:
                     return crearRespuestaError("Operación no soportada");
             }
