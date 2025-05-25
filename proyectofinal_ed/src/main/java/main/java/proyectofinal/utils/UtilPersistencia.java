@@ -914,6 +914,19 @@ public class UtilPersistencia {
         }
     }
 
+    public List<Valoracion> obtenerValoracionesPorEstudiante(String id) {
+        try {
+            utilLog.escribirLog("Obteniendo valoraciones por estudiante: " + id, Level.INFO);
+            return listaContenidosCache.stream()
+                    .flatMap(c -> c.getValoraciones().stream())
+                    .filter(v -> v.getIdAutor().equals(id))
+                    .collect(Collectors.toList());
+        } catch (Exception e) {
+            utilLog.escribirLog("Error obteniendo valoraciones: " + e.getMessage(), Level.SEVERE);
+            return Collections.emptyList();
+        }
+    }
+
     public static class PersistenciaException extends RuntimeException {
         public PersistenciaException(String message, Throwable cause) {
             super(message, cause);

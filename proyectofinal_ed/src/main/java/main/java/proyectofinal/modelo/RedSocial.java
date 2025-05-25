@@ -33,6 +33,7 @@ public class RedSocial {
         //this.arbolContenidos.inicializarConLista(utilRed.obtenerContenidos());
         cargarContenidosAlArbol();
         cargarRelacionesAfinidad();
+        grafoAfinidad.calcularAfinidades();
     }
 
     private void verificarArchivosPersistencia() {
@@ -52,7 +53,7 @@ public class RedSocial {
         usuarios.stream()
                 .filter(u -> u instanceof Estudiante)
                 .map(u -> (Estudiante) u)
-                .forEach(grafoAfinidad::agregarNodo);
+                .forEach(grafoAfinidad::agregarEstudiante);
 
         List<GrupoEstudio> grupos = utilRed.obtenerGrupos();
         if (grupos != null) {
@@ -71,8 +72,8 @@ public class RedSocial {
                     Estudiante e1 = (Estudiante) u1;
                     Estudiante e2 = (Estudiante) u2;
 
-                    int pesoActual = grafoAfinidad.obtenerPesoArista(e1, e2);
-                    grafoAfinidad.agregarArista(e1, e2, pesoActual + 1);
+                    int pesoActual = grafoAfinidad.obtenerPesoAfinidad(e1, e2);
+                    actualizarAfinidad(e1, e2, pesoActual + 1);
                 }
             }
         }
@@ -97,7 +98,7 @@ public class RedSocial {
         utilRed.registrarUsuario(usuario);
         usuarios.add(usuario);
         if (usuario instanceof Estudiante) {
-            grafoAfinidad.agregarNodo((Estudiante) usuario);
+            grafoAfinidad.agregarEstudiante((Estudiante) usuario);
         }
         return true;
     }
@@ -127,6 +128,10 @@ public class RedSocial {
             Usuario usuario = buscarUsuario(usuarioId);
             if (usuario == null) {
                 return false;
+            }
+
+            if (usuario instanceof Estudiante) {
+                grafoAfinidad.removerEstudiante((Estudiante) usuario);
             }
 
             eliminarContenidosUsuario(usuarioId);
@@ -286,61 +291,86 @@ public class RedSocial {
 
     // Métodos de recomendaciones y afinidad
     public void actualizarAfinidad(Estudiante e1, Estudiante e2, int incremento) {
-        int pesoActual = grafoAfinidad.obtenerPesoArista(e1, e2);
-        grafoAfinidad.agregarArista(e1, e2, pesoActual + incremento);
+        int pesoActual = grafoAfinidad.obtenerPesoAfinidad(e1, e2);
+        actualizarRelacionAfinidad(e1, e2, pesoActual + incremento);
     }
 
-    public List<Estudiante> obtenerRecomendacionesAmplias(String idEstudiante) {
+    public List<Estudiante> obtenerRecomendacionesAmplias(String idEstudiante, int limite) {
         Usuario usuario = buscarUsuario(idEstudiante);
         if (!(usuario instanceof Estudiante)) {
             throw new IllegalArgumentException("El usuario no es un estudiante");
         }
-        return grafoAfinidad.obtenerRecomendaciones((Estudiante) usuario);
+        return grafoAfinidad.obtenerRecomendaciones((Estudiante) usuario, limite);
     }
 
-    public List<Estudiante> generarRecomendaciones(String idUsuario) {
+    public List<Estudiante> generarRecomendaciones(String idUsuario, int limite) {
         Usuario usuario = buscarUsuario(idUsuario);
         if (!(usuario instanceof Estudiante)) {
             throw new IllegalArgumentException("El usuario no es un estudiante");
         }
-        return grafoAfinidad.obtenerRecomendaciones((Estudiante) usuario);
+        return grafoAfinidad.obtenerRecomendaciones((Estudiante) usuario, limite);
     }
 
     // Métodos de grupos de estudio
     public List<GrupoEstudio> formarGruposAutomaticos() {
         List<GrupoEstudio> grupos = utilRed.formarGruposAutomaticos(this.usuarios);
         utilRed.guardarGrupos(grupos);
-        actualizarAfinidadPorGrupos(grupos);
-        return grupos;
-    }
 
-    private void actualizarAfinidadPorGrupos(List<GrupoEstudio> grupos) {
+        // Actualizar relaciones de afinidad para los nuevos grupos
         for (GrupoEstudio grupo : grupos) {
-            List<String> idsMiembros = grupo.getIdMiembros();
-            for (int i = 0; i < idsMiembros.size(); i++) {
-                for (int j = i + 1; j < idsMiembros.size(); j++) {
-                    actualizarRelacionAfinidad(idsMiembros.get(i), idsMiembros.get(j));
+            List<String> miembrosIds = grupo.getIdMiembros();
+            for (int i = 0; i < miembrosIds.size(); i++) {
+                for (int j = i + 1; j < miembrosIds.size(); j++) {
+                    actualizarRelacionAfinidad(miembrosIds.get(i), miembrosIds.get(j));
                 }
             }
         }
+        return grupos;
     }
+
 
     private void actualizarRelacionAfinidad(String id1, String id2) {
         try {
-            Estudiante e1 = (Estudiante) buscarUsuario(id1);
-            Estudiante e2 = (Estudiante) buscarUsuario(id2);
+            Usuario usuario1 = buscarUsuario(id1);
+            Usuario usuario2 = buscarUsuario(id2);
 
-            if (e1 != null && e2 != null) {
-                grafoAfinidad.agregarArista(
-                        e1,
-                        e2,
-                        grafoAfinidad.obtenerPesoArista(e1, e2) + 1
-                );
+            if (usuario1 instanceof Estudiante && usuario2 instanceof Estudiante) {
+                Estudiante e1 = (Estudiante) usuario1;
+                Estudiante e2 = (Estudiante) usuario2;
+
+                // Obtener peso actual y aumentar en 1
+                int pesoActual = grafoAfinidad.obtenerPesoAfinidad(e1, e2);
+                grafoAfinidad.establecerAfinidad(e1, e2, pesoActual + 1);
+
+                // Actualizar intereses comunes
                 actualizarInteresesCompartidos(e1, e2);
             }
         } catch (Exception e) {
-            System.err.println("Error actualizando afinidad: " + e.getMessage());
+            System.out.println("Error actualizando afinidad entre " + id1 + " y " + id2 + ": " + e.getMessage());
         }
+    }
+
+    /**
+     * Detecta comunidades de estudiantes en el grafo
+     */
+    public List<List<Estudiante>> detectarComunidades() {
+        return grafoAfinidad.detectarComunidades();
+    }
+
+    /**
+     * Encuentra el camino más corto entre dos estudiantes
+     */
+    public List<Estudiante> encontrarCaminoAfinidad(String idOrigen, String idDestino) {
+        Estudiante origen = (Estudiante) buscarUsuario(idOrigen);
+        Estudiante destino = (Estudiante) buscarUsuario(idDestino);
+        return grafoAfinidad.encontrarCaminoMasCorto(origen, destino);
+    }
+
+    /**
+     * Muestra el estado actual del grafo de afinidad
+     */
+    public void mostrarEstadoGrafoAfinidad() {
+        grafoAfinidad.mostrarEstado();
     }
 
     private void actualizarInteresesCompartidos(Estudiante e1, Estudiante e2) throws OperacionFallidaException {
@@ -578,5 +608,101 @@ public class RedSocial {
         contenido.agregarValoracion(valoracion);
         utilRed.guardarValoracion(contenidoId, valoracion);
         return true;
+    }
+
+    public List<Contenido> obtenerContenidosPorUsuario(String userId) {
+        //obtener contenidos por usuario
+        List<Contenido> contenidos = new ArrayList<>();
+        for (Contenido contenido : arbolContenidos.obtenerTodosEnOrden(obtenerContenidosSinArbol())) {
+            if (contenido.getAutor().equals(userId)) {
+                contenidos.add(contenido);
+            }
+        }
+        return contenidos;
+    }
+
+    public List<SolicitudAyuda> obtenerSolicitudesPorUsuario(String userId) {
+        //obtener solicitudes por usuario
+        List<SolicitudAyuda> solicitudes = new ArrayList<>();
+        for (SolicitudAyuda solicitud : colaSolicitudes) {
+            if (solicitud.getSolicitanteId().equals(userId)) {
+                solicitudes.add(solicitud);
+            }
+        }
+        return solicitudes;
+    }
+
+    public List<Estudiante> obtenerSugerenciasCompaneros(String userId) {
+        try {
+            Usuario usuario = buscarUsuario(userId);
+            if (!(usuario instanceof Estudiante)) {
+                throw new IllegalArgumentException("El usuario no es un estudiante");
+            }
+            // Añadir un parámetro para el límite de recomendaciones (ej. 10)
+            return grafoAfinidad.obtenerRecomendaciones((Estudiante) usuario, 10);
+        } catch (Exception e) {
+            System.out.println("Error obteniendo sugerencias de compañeros: " + e.getMessage());
+            return Collections.emptyList();
+        }
+    }
+
+
+    public String obtenerGruposEstudioPorUsuario(String id) {
+        // Se inicializa la lista de grupos
+        List<GrupoEstudio> grupos = utilRed.obtenerGrupos();
+
+        StringBuilder sb = new StringBuilder();
+        // Se hace un ciclo para buscar los grupos a los que pertenece el usuario
+        for (GrupoEstudio grupo : grupos) {
+            // Si el grupo contiene al usuario, se agrega a la lista
+            if (grupo.getIdMiembros().contains(id)) {
+                sb.append(grupo.getNombre()).append(", ");
+            }
+        }
+        // Se eliminan los últimos dos caracteres (", "), si existen
+        if (sb.length() > 0) {
+            sb.setLength(sb.length() - 2); // Eliminar la última coma y espacio
+        }
+        // Se retorna la lista de grupos
+        return sb.toString();
+    }
+
+    public List<Usuario> obtenerTodosUsuarios() {
+        return utilRed.obtenerUsuarios();
+    }
+
+    /**
+     * Actualiza la relación de afinidad entre dos estudiantes
+     */
+    public void actualizarRelacionAfinidad(Estudiante e1, Estudiante e2, int nuevoPeso) {
+        Objects.requireNonNull(e1, "El estudiante 1 no puede ser nulo");
+        Objects.requireNonNull(e2, "El estudiante 2 no puede ser nulo");
+
+        grafoAfinidad.establecerAfinidad(e1, e2, nuevoPeso);
+        System.out.println("Relación de afinidad actualizada entre " + e1.getId() + " y " + e2.getId() + " con peso " + nuevoPeso);
+    }
+
+    /**
+     * Obtiene el peso de afinidad entre dos estudiantes
+     */
+    public int obtenerPesoAfinidad(String idEstudiante1, String idEstudiante2) {
+        Estudiante e1 = (Estudiante) buscarUsuario(idEstudiante1);
+        Estudiante e2 = (Estudiante) buscarUsuario(idEstudiante2);
+        return grafoAfinidad.obtenerPesoAfinidad(e1, e2);
+    }
+
+    /**
+     * Calcula y actualiza todas las afinidades en el grafo
+     */
+    public void calcularAfinidades() {
+        grafoAfinidad.calcularAfinidades();
+        System.out.println("Afinidades recalculadas para todos los estudiantes");
+    }
+
+    /**
+     * Obtiene estadísticas del grafo de afinidad
+     */
+    public String obtenerEstadisticasAfinidad() {
+        return grafoAfinidad.obtenerEstadisticas();
     }
 }

@@ -1,10 +1,7 @@
 package main.java.proyectofinal.modelo;
 
 
-import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 
 import main.java.proyectofinal.excepciones.OperacionFallidaException;
 import main.java.proyectofinal.utils.UtilEstudiante;
@@ -188,5 +185,31 @@ public String crearGrupo(String nombreGrupo, String descripcion) throws Operacio
         }
         idsContenidosPublicados.remove(id);
         utilEstudiante.eliminarContenido(id);
+    }
+
+    /**
+     * Obtiene los grupos de estudio del estudiante
+     * @return Conjunto de identificadores de grupos de estudio
+     */
+    public Set<String> getGruposEstudio() {
+        try {
+            return new HashSet<>(utilEstudiante.obtenerGruposDeEstudiante(this.getId()));
+        } catch (OperacionFallidaException e) {
+            System.out.println("Error al obtener grupos de estudio: " + e.getMessage());
+            return Collections.emptySet(); // Devuelve conjunto vacío en caso de error
+        }
+    }
+
+    public Map<String, Double> getValoracionesContenidos() {
+        Map<String, Double> valoraciones = new HashMap<>();
+        try {
+            List<Valoracion> valoracionesList = utilEstudiante.obtenerValoracionesDeEstudiante(this.getId());
+            for (Valoracion valoracion : valoracionesList) {
+                valoraciones.put(valoracion.getIdContenido(), valoracion.getPuntuacion());
+            }
+        } catch (OperacionFallidaException e) {
+            System.out.println("Error al obtener valoraciones: " + e.getMessage());
+        }
+        return valoraciones;
     }
 }

@@ -104,4 +104,12 @@ public class Valoracion {
     public String getUsuarioId() {
         return idAutor;
     }
+
+    public String getIdContenido() {
+        return idValoracion;
+    }
+
+    public Double getPuntuacion() {
+        return valor.doubleValue();
+    }
 }

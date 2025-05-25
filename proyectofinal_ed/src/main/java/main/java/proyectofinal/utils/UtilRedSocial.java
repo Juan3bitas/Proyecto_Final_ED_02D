@@ -356,7 +356,7 @@ public class UtilRedSocial {
             // 1. Obtener todos los grupos
             List<GrupoEstudio> todosGrupos = utilPersistencia.obtenerTodosGrupos();
             
-            // 2. Filtrar los grupos donde el estudiante es miembro
+            // 2. Filtrar los grupos donde el estudiante es miembro, retornando solo los IDs de los grupos
             return todosGrupos.stream()
                     .filter(grupo -> grupo.getIdMiembros().contains(estudianteId))
                     .map(grupo -> grupo.getIdGrupo())  // Forma corregida
@@ -515,5 +515,19 @@ public class UtilRedSocial {
 
     public Contenido buscarContenidoPorId(String contenidoId) {
         return utilPersistencia.buscarContenidoPorId(contenidoId);
+    }
+
+    public List<Valoracion> obtenerValoracionesPorEstudiante(String id) {
+        try {
+            Objects.requireNonNull(id, "ID de estudiante no puede ser nulo");
+            if (id.trim().isEmpty()) {
+                throw new IllegalArgumentException("ID de estudiante no puede estar vacío");
+            }
+
+            return utilPersistencia.obtenerValoracionesPorEstudiante(id);
+        } catch (Exception e) {
+            utilLog.logSevere("Error buscando valoraciones: " + e.getMessage());
+            return Collections.emptyList();
+        }
     }
 }

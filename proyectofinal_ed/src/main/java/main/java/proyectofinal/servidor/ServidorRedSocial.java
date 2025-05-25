@@ -15,6 +15,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 public class ServidorRedSocial {
     private static final int PUERTO = 12345;
@@ -31,7 +32,7 @@ public class ServidorRedSocial {
     public static void main(String[] args) {
         try (ServerSocket serverSocket = new ServerSocket(PUERTO)) {
             System.out.println("✅ Servidor iniciado en puerto " + PUERTO);
-
+            inicializarGrafoAfinidad();
             while (true) {
                 Socket socketCliente = serverSocket.accept();
                 threadPool.execute(() -> manejarCliente(socketCliente));
@@ -40,6 +41,35 @@ public class ServidorRedSocial {
             System.err.println("❌ Error en servidor: " + e.getMessage());
         } finally {
             threadPool.shutdown();
+        }
+    }
+
+    private static void inicializarGrafoAfinidad() {
+        try {
+            System.out.println("🔄 Inicializando grafo de afinidad...");
+
+            // 1. Obtener todos los estudiantes
+            List<Usuario> usuarios = redSocial.obtenerTodosUsuarios();
+            List<Estudiante> estudiantes = usuarios.stream()
+                    .filter(u -> u instanceof Estudiante)
+                    .map(u -> (Estudiante)u)
+                    .collect(Collectors.toList());
+
+            System.out.println("📊 Total estudiantes encontrados: " + estudiantes.size());
+
+            // 2. Agregar estudiantes al grafo
+            estudiantes.forEach(redSocial.getGrafoAfinidad()::agregarEstudiante);
+
+            // 3. Calcular afinidades entre todos los estudiantes
+            redSocial.getGrafoAfinidad().calcularAfinidades();
+
+            // 4. Mostrar estado del grafo (opcional, para depuración)
+            redSocial.getGrafoAfinidad().mostrarEstado();
+
+            System.out.println("✅ Grafo de afinidad inicializado correctamente");
+        } catch (Exception e) {
+            System.err.println("❌ Error al inicializar grafo de afinidad: " + e.getMessage());
+            e.printStackTrace();
         }
     }
 
@@ -197,6 +227,12 @@ public class ServidorRedSocial {
                     return manejarObtenerValoracion(datos);
                 case "BUSCAR_CONTENIDO":
                     return manejarBuscarContenido(datos);
+                case "OBTENER_CONTENIDOS_USUARIO":
+                    return manejarObtenerContenidosUsuario(datos);
+                case "OBTENER_SOLICITUDES_USUARIO":
+                    return manejarObtenerSolicitudesUsuario(datos);
+                case "OBTENER_SUGERENCIAS":
+                    return manejarObtenerSugerencias(datos);
                 default:
                     return crearRespuestaError("Operación no soportada");
             }
@@ -211,6 +247,68 @@ public class ServidorRedSocial {
     }
 
     ///
+    private static JsonObject manejarObtenerSugerencias(JsonObject datos) {
+        try {
+            if (!datos.has("userId")) {
+                return crearRespuestaError("Falta el ID del usuario");
+            }
+
+            String userId = datos.get("userId").getAsString();
+            LOGGER.info("Calculando sugerencias para: " + userId);
+
+            // Verificar que el usuario existe y es estudiante
+            Usuario usuario = redSocial.buscarUsuario(userId);
+            if (usuario == null || !(usuario instanceof Estudiante)) {
+                return crearRespuestaError("Usuario no encontrado o no es estudiante");
+            }
+
+            // Obtener sugerencias del grafo de afinidad
+            List<Estudiante> sugerencias = redSocial.obtenerSugerenciasCompaneros(userId);
+            LOGGER.info("Sugerencias encontradas: " + sugerencias.size());
+
+            // Verificar si el grafo tiene datos
+            if (redSocial.getGrafoAfinidad().obtenerTotalEstudiantes() == 0) {
+                LOGGER.warning("El grafo de afinidad está vacío");
+                return crearRespuestaError("El sistema de recomendaciones no está inicializado");
+            }
+
+            JsonArray sugerenciasJson = new JsonArray();
+
+            for (Estudiante estudiante : sugerencias) {
+                JsonObject estudianteJson = new JsonObject();
+                estudianteJson.addProperty("id", estudiante.getId());
+                estudianteJson.addProperty("nombre", estudiante.getNombre());
+
+                // Intereses
+                String intereses = estudiante.getIntereses() != null ?
+                        String.join(", ", estudiante.getIntereses()) : "Sin intereses";
+                estudianteJson.addProperty("intereses", intereses);
+
+                // Grupo de estudio
+                String grupoEstudio = redSocial.obtenerGruposEstudioPorUsuario(estudiante.getId());
+                estudianteJson.addProperty("grupo", grupoEstudio != null ? grupoEstudio : "Sin grupo");
+
+                // Peso de afinidad (para depuración)
+                int peso = redSocial.getGrafoAfinidad().obtenerPesoAfinidad((Estudiante)usuario, estudiante);
+                estudianteJson.addProperty("afinidad", peso);
+
+                sugerenciasJson.add(estudianteJson);
+            }
+
+            JsonObject respuesta = crearRespuestaExito("Sugerencias obtenidas");
+            respuesta.add("sugerencias", sugerenciasJson);
+
+            // Datos de depuración
+            respuesta.addProperty("totalEstudiantes", redSocial.getGrafoAfinidad().obtenerTotalEstudiantes());
+            respuesta.addProperty("totalConexiones", redSocial.getGrafoAfinidad().obtenerTotalConexiones());
+
+            return respuesta;
+        } catch (Exception e) {
+            LOGGER.severe("Error al obtener sugerencias: " + e.getMessage());
+            return crearRespuestaError("Error al obtener sugerencias: " + e.getMessage());
+        }
+    }
+
     private static JsonObject manejarAgregarValoracion(JsonObject datos) {
         try {
             // Validar campos obligatorios
@@ -427,7 +525,68 @@ public class ServidorRedSocial {
             return crearRespuestaError("Error en login: " + e.getMessage());
         }
     }
+    private static JsonObject manejarObtenerContenidosUsuario(JsonObject datos) {
+        try {
+            if (!datos.has("userId")) {
+                return crearRespuestaError("Falta el ID del usuario");
+            }
 
+            String userId = datos.get("userId").getAsString();
+            List<Contenido> contenidos = redSocial.obtenerContenidosPorUsuario(userId);
+            JsonArray contenidosJson = new JsonArray();
+
+            for (Contenido contenido : contenidos) {
+                JsonObject contenidoJson = new JsonObject();
+                contenidoJson.addProperty("id", contenido.getId());
+                contenidoJson.addProperty("titulo", contenido.getTitulo());
+                contenidoJson.addProperty("autor", contenido.getAutor());
+                contenidoJson.addProperty("tema", contenido.getTema());
+                contenidoJson.addProperty("descripcion", contenido.getDescripcion());
+                contenidoJson.addProperty("tipo", contenido.getTipo().name());
+                contenidoJson.addProperty("fechaCreacion", dateFormat.format(contenido.getFecha()));
+                contenidoJson.addProperty("contenido", contenido.getContenido());
+
+                contenidosJson.add(contenidoJson);
+            }
+
+            JsonObject respuesta = crearRespuestaExito("Contenidos del usuario obtenidos");
+            respuesta.add("contenidos", contenidosJson);
+            return respuesta;
+        } catch (Exception e) {
+            return crearRespuestaError("Error al obtener contenidos del usuario: " + e.getMessage());
+        }
+    }
+
+    private static JsonObject manejarObtenerSolicitudesUsuario(JsonObject datos) {
+        try {
+            if (!datos.has("userId")) {
+                return crearRespuestaError("Falta el ID del usuario");
+            }
+
+            String userId = datos.get("userId").getAsString();
+            List<SolicitudAyuda> solicitudes = redSocial.obtenerSolicitudesPorUsuario(userId);
+            JsonArray solicitudesJson = new JsonArray();
+
+            for (SolicitudAyuda solicitud : solicitudes) {
+                JsonObject solicitudJson = new JsonObject();
+                solicitudJson.addProperty("id", solicitud.getId());
+                solicitudJson.addProperty("tema", solicitud.getTema());
+                solicitudJson.addProperty("descripcion", solicitud.getDescripcion());
+                solicitudJson.addProperty("fecha", dateFormat.format(solicitud.getFecha()));
+                solicitudJson.addProperty("urgencia", solicitud.getUrgencia().name());
+                solicitudJson.addProperty("estado", solicitud.getEstado().name());
+                solicitudJson.addProperty("solicitanteId", solicitud.getSolicitanteId());
+
+                solicitudesJson.add(solicitudJson);
+            }
+
+            JsonObject respuesta = crearRespuestaExito("Solicitudes del usuario obtenidas");
+            respuesta.add("solicitudes", solicitudesJson);
+            return respuesta;
+        } catch (Exception e) {
+            return crearRespuestaError("Error al obtener solicitudes del usuario: " + e.getMessage());
+        }
+    }
     private static JsonObject manejarObtenerContenidos() {
         try {
             List<Contenido> contenidos = redSocial.obtenerTodosContenidos();

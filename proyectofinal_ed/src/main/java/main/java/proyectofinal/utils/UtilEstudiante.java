@@ -1,10 +1,8 @@
 package main.java.proyectofinal.utils;
 
 import java.util.List;
-import main.java.proyectofinal.modelo.Contenido;
-import main.java.proyectofinal.modelo.Estudiante;
-import main.java.proyectofinal.modelo.GrupoEstudio;
-import main.java.proyectofinal.modelo.SolicitudAyuda;
+
+import main.java.proyectofinal.modelo.*;
 import main.java.proyectofinal.excepciones.OperacionFallidaException;
 import java.util.Objects;
 
@@ -214,6 +212,17 @@ public void removerEstudianteDeGrupo(String estudianteId, String grupoId) throws
             
         } catch (Exception e) {
             throw new OperacionFallidaException("Error al crear grupo: " + e.getMessage(), creadorId, e);
+        }
+    }
+
+    public List<Valoracion> obtenerValoracionesDeEstudiante(String id) throws OperacionFallidaException {
+        Objects.requireNonNull(id, "ID de estudiante no puede ser nulo");
+
+        try {
+            // Delegar la operación a UtilRedSocial
+            return utilRedSocial.obtenerValoracionesPorEstudiante(id);
+        } catch (Exception e) {
+            throw new OperacionFallidaException("Error al obtener valoraciones del estudiante", id, e);
         }
     }
 }
