@@ -212,4 +212,9 @@ public String crearGrupo(String nombreGrupo, String descripcion) throws Operacio
         }
         return valoraciones;
     }
+
+    @Override
+    public String getTipo() {
+        return "ESTUDIANTE";
+    }
 }

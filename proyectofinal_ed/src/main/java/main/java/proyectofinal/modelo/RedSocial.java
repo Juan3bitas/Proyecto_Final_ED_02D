@@ -705,4 +705,36 @@ public class RedSocial {
     public String obtenerEstadisticasAfinidad() {
         return grafoAfinidad.obtenerEstadisticas();
     }
+
+    public boolean suspenderUsuario(String correo, int dias) {
+        Usuario usuario = utilRed.buscarUsuarioPorCorreo(correo);
+        if (usuario != null) {
+            usuario.setSuspendido(true);
+            usuario.setDiasSuspension(dias);
+            utilRed.modificarUsuario(usuario);
+            return true;
+        }
+        return false;
+    }
+
+    public boolean eliminarContenido(String contenidoId) {
+        Contenido contenido = arbolContenidos.buscarPorId(contenidoId);
+        if (contenido != null) {
+            arbolContenidos.eliminar(contenido);
+            utilRed.eliminarContenido(contenidoId);
+            return true;
+        }
+        return false;
+    }
+
+    public boolean reactivarUsuario(String correo) {
+        Usuario usuario = utilRed.buscarUsuarioPorCorreo(correo);
+        if (usuario != null && usuario.isSuspendido()) {
+            usuario.setSuspendido(false);
+            usuario.setDiasSuspension(0);
+            utilRed.modificarUsuario(usuario);
+            return true;
+        }
+        return false;
+    }
 }

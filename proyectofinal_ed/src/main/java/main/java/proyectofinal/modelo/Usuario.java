@@ -98,4 +98,6 @@ public abstract class Usuario {
             id, nombre, correo
         );
     }
+
+    public abstract String getTipo();
 }

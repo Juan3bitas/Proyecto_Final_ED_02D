@@ -52,7 +52,7 @@ public class ServidorRedSocial {
             List<Usuario> usuarios = redSocial.obtenerTodosUsuarios();
             List<Estudiante> estudiantes = usuarios.stream()
                     .filter(u -> u instanceof Estudiante)
-                    .map(u -> (Estudiante)u)
+                    .map(u -> (Estudiante) u)
                     .collect(Collectors.toList());
 
             System.out.println("📊 Total estudiantes encontrados: " + estudiantes.size());
@@ -233,6 +233,16 @@ public class ServidorRedSocial {
                     return manejarObtenerSolicitudesUsuario(datos);
                 case "OBTENER_SUGERENCIAS":
                     return manejarObtenerSugerencias(datos);
+                case "SUSPENDER_USUARIO":
+                    return manejarSuspenderUsuario(datos);
+                case "REACTIVAR_USUARIO":
+                    return manejarReactivarUsuario(datos);
+                case "ELIMINAR_CONTENIDO":
+                    return manejarEliminarContenido(datos);
+                case "OBTENER_CONTENIDO_COMPLETO":
+                    return manejarObtenerContenidoCompleto(datos);
+                case "OBTENER_TODOS_USUARIOS":
+                    return manejarObtenerTodosUsuarios(datos);
                 default:
                     return crearRespuestaError("Operación no soportada");
             }
@@ -244,6 +254,144 @@ public class ServidorRedSocial {
             return crearRespuestaError("Error interno del servidor");
         }
 
+    }
+
+    private static JsonObject manejarObtenerTodosUsuarios(JsonObject datos) {
+        try {
+            List<Usuario> usuarios = redSocial.obtenerTodosUsuarios();
+            JsonArray usuariosJson = new JsonArray();
+
+            for (Usuario usuario : usuarios) {
+                JsonObject usuarioJson = new JsonObject();
+                usuarioJson.addProperty("id", usuario.getId());
+                usuarioJson.addProperty("nombre", usuario.getNombre());
+                usuarioJson.addProperty("correo", usuario.getCorreo());
+                usuarioJson.addProperty("suspendido", usuario.isSuspendido());
+                usuarioJson.addProperty("diasSuspension", usuario.getDiasSuspension());
+                usuarioJson.addProperty("esModerador", usuario instanceof Moderador);
+
+                usuariosJson.add(usuarioJson);
+            }
+
+            JsonObject respuesta = crearRespuestaExito("Usuarios obtenidos");
+            respuesta.add("usuarios", usuariosJson);
+            return respuesta;
+        } catch (Exception e) {
+            return crearRespuestaError("Error al obtener usuarios: " + e.getMessage());
+        }
+    }
+
+    private static JsonObject manejarSuspenderUsuario(JsonObject datos) {
+        try {
+            if (!datos.has("correoUsuario") || !datos.has("diasSuspension") || !datos.has("moderadorId")) {
+                return crearRespuestaError("Faltan datos para suspender usuario");
+            }
+
+            String correo = datos.get("correoUsuario").getAsString();
+            int dias = datos.get("diasSuspension").getAsInt();
+            String moderadorId = datos.get("moderadorId").getAsString();
+
+            // Verificar que el moderador existe
+            Usuario moderador = redSocial.buscarUsuario(moderadorId);
+            if (moderador == null || !(moderador instanceof Moderador)) {
+                return crearRespuestaError("No tienes permisos para esta acción");
+            }
+
+            if (redSocial.suspenderUsuario(correo, dias)) {
+                return crearRespuestaExito("Usuario suspendido correctamente");
+            }
+            return crearRespuestaError("No se pudo suspender al usuario");
+        } catch (Exception e) {
+            return crearRespuestaError("Error al suspender usuario: " + e.getMessage());
+        }
+    }
+
+    private static JsonObject manejarReactivarUsuario(JsonObject datos) {
+        try {
+            if (!datos.has("correoUsuario") || !datos.has("moderadorId")) {
+                return crearRespuestaError("Faltan datos para reactivar usuario");
+            }
+
+            String correo = datos.get("correoUsuario").getAsString();
+            String moderadorId = datos.get("moderadorId").getAsString();
+
+            // Verificar que el moderador existe
+            Usuario moderador = redSocial.buscarUsuario(moderadorId);
+            if (moderador == null || !(moderador instanceof Moderador)) {
+                return crearRespuestaError("No tienes permisos para esta acción");
+            }
+
+            if (redSocial.reactivarUsuario(correo)) {
+                return crearRespuestaExito("Usuario reactivado correctamente");
+            }
+            return crearRespuestaError("No se pudo reactivar al usuario");
+        } catch (Exception e) {
+            return crearRespuestaError("Error al reactivar usuario: " + e.getMessage());
+        }
+    }
+
+    private static JsonObject manejarEliminarContenido(JsonObject datos) {
+        try {
+            if (!datos.has("contenidoId") || !datos.has("moderadorId")) {
+                return crearRespuestaError("Faltan datos para eliminar contenido");
+            }
+
+            String contenidoId = datos.get("contenidoId").getAsString();
+            String moderadorId = datos.get("moderadorId").getAsString();
+
+            // Verificar que el moderador existe
+            Usuario moderador = redSocial.buscarUsuario(moderadorId);
+            if (moderador == null || !(moderador instanceof Moderador)) {
+                return crearRespuestaError("No tienes permisos para esta acción");
+            }
+
+            if (redSocial.eliminarContenido(contenidoId)) {
+                return crearRespuestaExito("Contenido eliminado correctamente");
+            }
+            return crearRespuestaError("No se pudo eliminar el contenido");
+        } catch (Exception e) {
+            return crearRespuestaError("Error al eliminar contenido: " + e.getMessage());
+        }
+    }
+
+    private static JsonObject manejarObtenerContenidoCompleto(JsonObject datos) {
+        try {
+            if (!datos.has("contenidoId")) {
+                return crearRespuestaError("Falta el ID del contenido");
+            }
+
+            String contenidoId = datos.get("contenidoId").getAsString();
+            Contenido contenido = redSocial.buscarContenido(contenidoId);
+            if (contenido == null) {
+                return crearRespuestaError("Contenido no encontrado");
+            }
+
+            JsonObject contenidoJson = new JsonObject();
+            contenidoJson.addProperty("id", contenido.getId());
+            contenidoJson.addProperty("titulo", contenido.getTitulo());
+            contenidoJson.addProperty("autor", contenido.getAutor());
+            contenidoJson.addProperty("tema", contenido.getTema());
+            contenidoJson.addProperty("descripcion", contenido.getDescripcion());
+            contenidoJson.addProperty("tipo", contenido.getTipo().name());
+            contenidoJson.addProperty("fechaCreacion", dateFormat.format(contenido.getFecha()));
+            contenidoJson.addProperty("contenido", contenido.getContenido());
+
+            JsonArray valoracionesJson = new JsonArray();
+            for (Valoracion valoracion : contenido.getValoraciones()) {
+                JsonObject v = new JsonObject();
+                v.addProperty("usuarioId", valoracion.getUsuarioId());
+                v.addProperty("valor", valoracion.getValor());
+                v.addProperty("comentario", valoracion.getComentario());
+                valoracionesJson.add(v);
+            }
+            contenidoJson.add("valoraciones", valoracionesJson);
+
+            JsonObject respuesta = crearRespuestaExito("Contenido obtenido");
+            respuesta.add("contenido", contenidoJson);
+            return respuesta;
+        } catch (Exception e) {
+            return crearRespuestaError("Error al obtener contenido: " + e.getMessage());
+        }
     }
 
     ///
@@ -496,6 +644,7 @@ public class ServidorRedSocial {
 
     private static JsonObject manejarLogin(JsonObject datos) {
         try {
+            // Validaciones existentes...
             if (!datos.has("correo") || !datos.has("contrasena")) {
                 return crearRespuestaError("Falta correo o contraseña");
             }
@@ -513,18 +662,32 @@ public class ServidorRedSocial {
 
             Usuario usuario = redSocial.iniciarSesion(correo, contrasena);
             if (usuario == null) {
-                Thread.sleep(200); // Prevención timing attack
+                Thread.sleep(200);
                 return crearRespuestaError("Credenciales inválidas");
             }
 
             JsonObject respuesta = crearRespuestaExito("Bienvenido " + usuario.getNombre());
-            respuesta.add("usuario", gson.toJsonTree(usuario));
+            JsonObject usuarioJson = gson.toJsonTree(usuario).getAsJsonObject();
+
+            // Añadir información de rol
+            if (usuario instanceof Moderador) {
+                usuarioJson.addProperty("esModerador", true);
+                usuarioJson.addProperty("rol", "MODERADOR");
+            } else {
+                usuarioJson.addProperty("esModerador", false);
+                usuarioJson.addProperty("rol", "USUARIO");
+            }
+
+            respuesta.add("usuario", usuarioJson);
             respuesta.addProperty("token", generarToken(usuario.getId()));
             return respuesta;
         } catch (Exception e) {
             return crearRespuestaError("Error en login: " + e.getMessage());
         }
     }
+
+
+
     private static JsonObject manejarObtenerContenidosUsuario(JsonObject datos) {
         try {
             if (!datos.has("userId")) {

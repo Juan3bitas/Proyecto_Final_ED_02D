@@ -1,6 +1,6 @@
 package main.java.proyectofinal.modelo;
 
-/**
+/*
  * Representa un moderador con permisos para suspender usuarios, eliminar contenidos y generar reportes.
  * Delega las operaciones complejas a UtilModerador.
  */
@@ -44,5 +44,11 @@ public class Moderador extends Usuario {
     public List<GrupoEstudio> detectarComunidades() {
         return utilModerador.obtenerComunidades();
     }
+
+    @Override
+    public String getTipo() {
+        return "MODERADOR";
+    }
+
 
 }

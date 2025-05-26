@@ -530,4 +530,18 @@ public class UtilRedSocial {
             return Collections.emptyList();
         }
     }
+
+    public Usuario buscarUsuarioPorCorreo(String correo) {
+        try {
+            Objects.requireNonNull(correo, "El correo no puede ser nulo");
+            if (correo.trim().isEmpty()) {
+                throw new IllegalArgumentException("El correo no puede estar vacío");
+            }
+
+            return utilPersistencia.buscarUsuarioCorreo(correo);
+        } catch (Exception e) {
+            utilLog.logSevere("Error buscando usuario por correo: " + e.getMessage());
+            return null;
+        }
+    }
 }
