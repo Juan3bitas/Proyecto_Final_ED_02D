@@ -209,7 +209,6 @@ public class ServidorRedSocial {
 
     private static JsonObject manejarObtenerMiembrosGrupo(JsonObject datos) {
         try {
-            // Null check for redSocial instance
             if (redSocial == null) {
                 return crearRespuestaError("Sistema de grupos no disponible");
             }
@@ -221,7 +220,6 @@ public class ServidorRedSocial {
                 return crearRespuestaError("Grupo no encontrado: " + grupoId);
             }
 
-            // Null check for members list
             List<String> idMiembros = grupo.getIdMiembros();
             if (idMiembros == null) {
                 return crearRespuestaError("El grupo no tiene lista de miembros");
@@ -291,7 +289,6 @@ public class ServidorRedSocial {
             String contenidoId = datos.get("contenidoId").getAsString();
             String usuarioId = datos.get("usuarioId").getAsString();
 
-            // Verificar permisos (solo creador del contenido o moderador puede eliminarlo)
             Contenido contenido = redSocial.buscarContenido(contenidoId);
             if (contenido == null) {
                 return crearRespuestaError("Contenido no encontrado");
@@ -659,7 +656,7 @@ public class ServidorRedSocial {
             int gruposComoMiembro = 0;
 
             for (GrupoEstudio grupo : todosGrupos) {
-                // Filtro opcional: solo grupos donde es miembro
+
                 boolean esMiembro = grupo.getIdMiembros().contains(userId);
                 if (!INCLUIR_NO_MIEMBROS && !esMiembro) continue;
 
@@ -894,7 +891,6 @@ public class ServidorRedSocial {
                 return crearRespuestaError("No tienes permisos para esta acción");
             }
 
-            // Intentar eliminación
             boolean eliminado = redSocial.eliminarContenido(contenidoId);
 
             if (eliminado) {
@@ -916,7 +912,7 @@ public class ServidorRedSocial {
     }
 
     private static JsonObject manejarObtenerContenidoCompleto(JsonObject datos) {
-        // Validación mejorada
+
         if (!datos.has("contenidoId")) {
             return crearRespuestaError("Se requiere el campo 'contenidoId'");
         }
@@ -943,7 +939,6 @@ public class ServidorRedSocial {
         }
     }
 
-    // Método auxiliar para construir el JSON del contenido
     private static JsonObject construirJsonContenido(String contenidoId, Contenido contenido) {
         JsonObject contenidoJson = new JsonObject();
 
@@ -1029,7 +1024,7 @@ public class ServidorRedSocial {
                 String grupoEstudio = redSocial.obtenerGruposEstudioPorUsuario(estudiante.getId());
                 estudianteJson.addProperty("grupo", grupoEstudio != null ? grupoEstudio : "Sin grupo");
 
-                // Peso de afinidad (para depuración)
+                // Peso de afinidad
                 int peso = redSocial.getGrafoAfinidad().obtenerPesoAfinidad((Estudiante)usuario, estudiante);
                 estudianteJson.addProperty("afinidad", peso);
 

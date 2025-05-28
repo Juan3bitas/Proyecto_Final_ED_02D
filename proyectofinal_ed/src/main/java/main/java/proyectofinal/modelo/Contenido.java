@@ -50,7 +50,7 @@ public class Contenido {
     }
 
 
-    //getters and setters
+
     public String getId(){
         return this.id;
     }

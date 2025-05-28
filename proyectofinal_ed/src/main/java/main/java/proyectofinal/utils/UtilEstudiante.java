@@ -166,7 +166,6 @@ public void removerEstudianteDeGrupo(String estudianteId, String grupoId) throws
         Objects.requireNonNull(grupoId, "ID de grupo no puede ser nulo");
         
         try {
-            // Obtener la lista de grupos del estudiante y verificar si contiene el grupoId
             List<String> grupos = obtenerGruposDeEstudiante(estudianteId);
             return grupos.contains(grupoId);
         } catch (Exception e) {
@@ -178,7 +177,6 @@ public void removerEstudianteDeGrupo(String estudianteId, String grupoId) throws
         Objects.requireNonNull(estudianteId, "ID de estudiante no puede ser nulo");
         
         try {
-            // Delegar la operación a UtilRedSocial
             return utilRedSocial.obtenerGruposDeEstudiante(estudianteId);
         } catch (Exception e) {
             throw new OperacionFallidaException("Error al obtener grupos del estudiante", estudianteId, e);
@@ -219,7 +217,6 @@ public void removerEstudianteDeGrupo(String estudianteId, String grupoId) throws
         Objects.requireNonNull(id, "ID de estudiante no puede ser nulo");
 
         try {
-            // Delegar la operación a UtilRedSocial
             return utilRedSocial.obtenerValoracionesPorEstudiante(id);
         } catch (Exception e) {
             throw new OperacionFallidaException("Error al obtener valoraciones del estudiante", id, e);

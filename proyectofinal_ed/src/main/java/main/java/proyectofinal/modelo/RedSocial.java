@@ -43,7 +43,6 @@ public class RedSocial {
         //this.arbolContenidos.inicializarConLista(utilRed.obtenerContenidos());
         cargarContenidosAlArbol();
         cargarRelacionesAfinidad();
-        // En tu método de inicialización:
         validarIntegridadGrupos();
         limpiarGruposDuplicados();
         consolidarGrupos();
@@ -63,7 +62,7 @@ public class RedSocial {
                 utilProperties.obtenerPropiedad("rutaUsuarios.txt"),
                 utilProperties.obtenerPropiedad("rutaContenidos.txt"),
                 utilProperties.obtenerPropiedad("rutaSolicitudes.txt"),
-                utilProperties.obtenerPropiedad("rutaGruposEstudio.txt"), // Corregido el nombre
+                utilProperties.obtenerPropiedad("rutaGruposEstudio.txt"),
                 utilProperties.obtenerPropiedad("rutaReportes.txt")
         };
 
@@ -195,8 +194,6 @@ public class RedSocial {
 
         this.colaSolicitudes = nuevaCola;
     }
-
-    // Métodos de gestión de contenidos
     public boolean crearContenido(String estudianteId, String titulo, String descripcion,
                                   TipoContenido tipo, String tema, String contenidoRuta) throws OperacionFallidaException {
         Objects.requireNonNull(estudianteId, "ID de estudiante no puede ser nulo");
@@ -981,7 +978,6 @@ public class RedSocial {
         Map<String, GrupoEstudio> gruposUnicos = new HashMap<>();
         List<GrupoEstudio> gruposAEliminar = new ArrayList<>();
 
-        // 1. Identificar duplicados
         for (GrupoEstudio grupo : this.gruposEstudio) {
             String claveUnica = generarClaveUnica(grupo);
             if (gruposUnicos.containsKey(claveUnica)) {
@@ -992,18 +988,15 @@ public class RedSocial {
             }
         }
 
-        // 2. Eliminar duplicados
         gruposAEliminar.forEach(grupo -> {
             this.gruposEstudio.remove(grupo);
             LOGGER.info("Grupo eliminado: " + grupo.getId());
         });
 
-        // 3. Reconstruir índices
         this.reconstruirIndicesGrupos();
     }
 
     private String generarClaveUnica(GrupoEstudio grupo) {
-        // Clave basada en nombre y miembros (ignorando ID y timestamp)
         List<String> miembrosOrdenados = new ArrayList<>(grupo.getIdMiembros());
         Collections.sort(miembrosOrdenados);
         return grupo.getNombre() + "|" + String.join(",", miembrosOrdenados);
@@ -1011,12 +1004,12 @@ public class RedSocial {
 
     public void validarIntegridadGrupos() {
         this.gruposEstudio.forEach(grupo -> {
-            // Verificar miembros existentes
+
             grupo.getIdMiembros().removeIf(idMiembro ->
                     this.buscarUsuario(idMiembro) == null
             );
 
-            // Verificar ID válido
+
             if (!grupo.getId().startsWith("GRP-") && !grupo.getId().matches("\\d+")) {
                 LOGGER.severe("ID de grupo inválido: " + grupo.getId());
             }
@@ -1025,27 +1018,24 @@ public class RedSocial {
     }
 
     public void consolidarGrupos() {
-        // 1. Agrupar por clave única
+
         Map<String, List<GrupoEstudio>> gruposPorClave = this.gruposEstudio.stream()
                 .collect(Collectors.groupingBy(this::generarClaveUnica));
 
-        // 2. Procesar cada grupo de duplicados
+
         gruposPorClave.values().stream()
                 .filter(lista -> lista.size() > 1)
                 .forEach(this::procesarDuplicados);
     }
 
     private void procesarDuplicados(List<GrupoEstudio> duplicados) {
-        // Conservar el grupo más reciente
+
         GrupoEstudio grupoPrincipal = duplicados.stream()
                 .max(Comparator.comparing(g -> g.getFechaCreacion().getTime())) // Convertir Date a long
                 .orElseThrow(() -> new IllegalStateException("No se pudo determinar el grupo principal"));
-
-        // Transferir datos de los duplicados
         duplicados.stream()
                 .filter(g -> !g.equals(grupoPrincipal))
                 .forEach(grupo -> {
-                    // 1. Transferir contenidos
                     if (!grupo.getContenidos().isEmpty()) {
                         LOGGER.info(String.format(
                                 "Transfiriendo %d contenidos de %s a %s",
@@ -1056,10 +1046,8 @@ public class RedSocial {
                         grupoPrincipal.getContenidos().addAll(grupo.getContenidos());
                     }
 
-                    // 2. Transferir mensajes (si aplica)
                     transferirMensajes(grupo, grupoPrincipal);
 
-                    // 3. Registrar la consolidación
                     LOGGER.info(String.format(
                             "Consolidado grupo %s (%s) en %s (%s)",
                             grupo.getId(),
@@ -1068,7 +1056,6 @@ public class RedSocial {
                             new Date(grupoPrincipal.getFechaCreacion().getTime())
                     ));
 
-                    // 4. Eliminar el duplicado
                     this.gruposEstudio.remove(grupo);
                 });
     }
@@ -1093,7 +1080,6 @@ public class RedSocial {
         long inicio = System.currentTimeMillis();
 
         try {
-            // 1. Reconstruir mapa rápido por ID
             mapaGruposPorId.clear();
             gruposEstudio.forEach(grupo -> {
                 if (grupo.getId() != null && !grupo.getId().isEmpty()) {
@@ -1102,8 +1088,6 @@ public class RedSocial {
                     LOGGER.warning("Grupo con ID nulo o vacío encontrado: " + grupo.getNombre());
                 }
             });
-
-            // 2. Reconstruir índice de miembros
             miembrosPorGrupo.clear();
             for (GrupoEstudio grupo : gruposEstudio) {
                 for (String idMiembro : grupo.getIdMiembros()) {
@@ -1112,7 +1096,6 @@ public class RedSocial {
                 }
             }
 
-            // 3. Reconstruir índice inverso (grupos por miembro)
             gruposPorMiembro.clear();
             for (GrupoEstudio grupo : gruposEstudio) {
                 for (String idMiembro : grupo.getIdMiembros()) {

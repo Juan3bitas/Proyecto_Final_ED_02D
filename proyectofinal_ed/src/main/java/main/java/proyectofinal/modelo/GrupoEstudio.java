@@ -27,12 +27,12 @@ public class GrupoEstudio {
 
     public GrupoEstudio(String id, String nombre, String descripcion, LinkedList<String> idMiembros,
                         LinkedList<String> idContenidos, Date fechaCreacion) throws OperacionFallidaException {
-        // Validaciones básicas
+
         this.idGrupo = (id == null || id.isEmpty()) ? UtilId.generarIdAleatorio() : id;
         this.nombre = Objects.requireNonNull(nombre, "El nombre no puede ser nulo");
         this.descripcion = descripcion;
 
-        // Validación de miembros
+
         final int MIN_MIEMBROS = 2;
         final int MAX_MIEMBROS = 6;
 
@@ -87,26 +87,25 @@ public class GrupoEstudio {
     }
 
     public LinkedList<String> getIdMiembros() {
-        return new LinkedList<>(this.idMiembros); // Defensive copy
+        return new LinkedList<>(this.idMiembros);
     }
 
     public void setMiembros(LinkedList<String> idMiembros) {
-        this.idMiembros = new LinkedList<>(idMiembros); // Defensive copy
+        this.idMiembros = new LinkedList<>(idMiembros);
     }
 
     public Date getFechaCreacion() {
-        return new Date(this.fechaCreacion.getTime()); // Defensive copy
+        return new Date(this.fechaCreacion.getTime());
     }
 
     public void setFechaCreacion(Date fechaCreacion) {
-        this.fechaCreacion = new Date(fechaCreacion.getTime()); // Defensive copy
+        this.fechaCreacion = new Date(fechaCreacion.getTime());
     }
 
     public LinkedList<String> getIdContenidos() {
-        return new LinkedList<>(idContenidos); // Defensive copy
+        return new LinkedList<>(idContenidos);
     }
 
-    // Métodos de operación
     public void agregarMiembro(String idEstudiante) throws OperacionFallidaException {
         if (utilGrupoEstudio.agregarMiembro(this.getIdGrupo(), idEstudiante)) {
             idMiembros.add(idEstudiante);
@@ -160,19 +159,16 @@ public class GrupoEstudio {
      */
     public Collection<Object> obtenerMensajesPorGrupo(String idGrupo) {
         try {
-            // Validación básica
             if (idGrupo == null || idGrupo.trim().isEmpty()) {
                 LOGGER.warning("ID de grupo inválido al obtener mensajes");
                 return Collections.emptyList();
             }
 
-            // Verificar que el grupo existe
             if (!idGrupo.equals(this.idGrupo)) {
                 LOGGER.warning("Intento de obtener mensajes de grupo no coincidente");
                 return Collections.emptyList();
             }
 
-            // Delegar a UtilGrupoEstudio
             Collection<Object> mensajes = utilGrupoEstudio.getMensajes(idGrupo);
 
             LOGGER.log(Level.FINE, "Obtenidos {0} mensajes para el grupo {1}",
@@ -212,7 +208,6 @@ public class GrupoEstudio {
                 new Object[]{idGrupo, idMiembros});
     }
 
-    // Unificar métodos de configuración de miembros
     public void setMiembros(List<String> idMiembros) {
         if (idMiembros == null || idMiembros.isEmpty()) {
             throw new IllegalArgumentException("La lista de IDs de miembros no puede ser nula o vacía");
@@ -225,7 +220,6 @@ public class GrupoEstudio {
             throw new IllegalArgumentException("El interés no puede ser nulo o vacío");
         }
 
-        // Aquí podrías agregar lógica para manejar el interés, por ejemplo, guardarlo en la base de datos
         LOGGER.log(Level.INFO, "Interés del grupo {0} actualizado a: {1}",
                 new Object[]{idGrupo, interes});
     }

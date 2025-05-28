@@ -60,13 +60,13 @@ public class Estudiante extends Usuario {
 
     public List<Contenido> obtenerContenidosPublicados() throws OperacionFallidaException {
         return utilEstudiante.obtenerContenidosDeEstudiante(this.getId()); 
-        // Asume que UtilEstudiante tiene este método que internamente usa UtilRedSocial
+
     }
     public void agregarInteres(String interes) throws OperacionFallidaException {
         Objects.requireNonNull(interes, "El interés no puede ser nulo");
         if (!intereses.contains(interes)) {
             intereses.add(interes);
-            // El grafo se actualiza a través de UtilEstudiante:
+
             utilEstudiante.actualizarIntereses(this, interes);
         }
     }
@@ -77,7 +77,7 @@ public class Estudiante extends Usuario {
     public void valorarContenido(Contenido contenido, int puntuacion, String comentario) throws OperacionFallidaException {
         if (contenido == null) throw new IllegalArgumentException("Contenido nulo");
         utilEstudiante.agregarValoracion(this.getId(), contenido.getId(), puntuacion, comentario);
-        // UtilEstudiante maneja la lógica con UtilRedSocial y PersistenceManager
+
     }
 
     //getters and setters
@@ -108,17 +108,17 @@ public void agregarContenido(String idContenido) {
         throw new IllegalArgumentException("El ID del contenido no puede estar vacío");
     }
 
-    // Verificar que no esté duplicado
+
     if (!idsContenidosPublicados.contains(idContenido)) {
-        // Agregar a la lista local
+
         idsContenidosPublicados.add(idContenido);
         
         try {
-            // Persistir el cambio
+
             utilEstudiante.actualizarContenidosPublicados(this);
 
         } catch (OperacionFallidaException e) {
-            // Revertir el cambio si falla la persistencia
+
             idsContenidosPublicados.remove(idContenido);
 
             throw new RuntimeException("Error al actualizar contenidos del estudiante", e);
@@ -131,7 +131,7 @@ public void dejarGrupo(String grupoId) throws OperacionFallidaException {
         throw new IllegalArgumentException("El ID del grupo no puede estar vacío");
     }
     
-    // Delegar la operación a UtilEstudiante
+
     utilEstudiante.abandonarGrupo(this.getId(), grupoId);
 }
 
@@ -148,7 +148,7 @@ public void dejarGrupo(String grupoId) throws OperacionFallidaException {
         }
 
         if (utilEstudiante.estaEnGrupo(this.getId(), grupoId)) {
-            // Versión con excepción personalizada
+
             throw new MiembroExistenteException(this.getId(), grupoId);
         }
 
@@ -162,7 +162,7 @@ public void dejarGrupo(String grupoId) throws OperacionFallidaException {
         return String.valueOf(idsContenidosPublicados.size());
     }
 
-    // Excepción personalizada
+
     public class MiembroExistenteException extends OperacionFallidaException {
         public MiembroExistenteException(String idEstudiante, String idGrupo) {
             super(String.format("El estudiante %s ya es miembro del grupo %s",
@@ -243,7 +243,7 @@ public String crearGrupo(String nombreGrupo, String descripcion) throws Operacio
             return Collections.singleton(utilEstudiante.obtenerGruposDeEstudiante(this.getId()));
         } catch (OperacionFallidaException e) {
             System.out.println("Error al obtener grupos: " + e.getMessage());
-            return Collections.emptyList(); // Devuelve lista vacía en caso de error
+            return Collections.emptyList();
         }
     }
 
@@ -253,7 +253,6 @@ public String crearGrupo(String nombreGrupo, String descripcion) throws Operacio
             throw new IllegalArgumentException("El ID del grupo no puede estar vacío");
         }
 
-        // Verificar si el estudiante ya está en el grupo
         if (!utilEstudiante.estaEnGrupo(this.getId(), idGrupo)) {
             utilEstudiante.unirEstudianteAGrupo(this.getId(), idGrupo);
         } else {

@@ -15,7 +15,7 @@ public class GrafoAfinidad {
     private static final Logger LOGGER = Logger.getLogger(GrafoAfinidad.class.getName());
     public final Map<Estudiante, Map<Estudiante, Integer>> grafo;
 
-    // Factores de ponderación configurables
+
     private final int PESO_BASE = 1;
     private final int PESO_GRUPO_ESTUDIO = 5;
     private final int PESO_VALORACION_SIMILAR = 3;
@@ -50,34 +50,27 @@ public class GrafoAfinidad {
         LOGGER.log(Level.FINE, "Estudiante removido: ID={0}", estudiante.getId());
     }
 
-    /**
-     * Calcula y actualiza todas las afinidades automáticamente
-     */
+
     public void calcularAfinidades() {
         LOGGER.info("Iniciando cálculo de afinidades...");
         List<Estudiante> estudiantes = new ArrayList<>(grafo.keySet());
         int totalConexiones = 0;
 
-        // Limpiar conexiones existentes primero
         grafo.values().forEach(Map::clear);
 
-        // Calcular nuevas afinidades
         for (int i = 0; i < estudiantes.size(); i++) {
             Estudiante e1 = estudiantes.get(i);
 
             for (int j = i + 1; j < estudiantes.size(); j++) {
                 Estudiante e2 = estudiantes.get(j);
 
-                // 1. Verificar grupos en común
                 Set<String> gruposComunes = new HashSet<>(e1.getGruposEstudio());
                 gruposComunes.retainAll(e2.getGruposEstudio());
                 int pesoGrupos = gruposComunes.size() * PESO_GRUPO_ESTUDIO;
 
-                // 2. Verificar valoraciones similares
                 double similitud = calcularSimilitudValoraciones(e1, e2);
                 int pesoValoraciones = (int)(similitud * PESO_VALORACION_SIMILAR);
 
-                // Peso total
                 int pesoTotal = PESO_BASE + pesoGrupos + pesoValoraciones;
 
                 if (pesoTotal > PESO_BASE) {
@@ -111,12 +104,10 @@ public class GrafoAfinidad {
     private int calcularPesoAfinidad(Estudiante e1, Estudiante e2) {
         int peso = PESO_BASE;
 
-        // 1. Grupos de estudio en común
         Set<String> gruposComunes = new HashSet<>(e1.getGruposEstudio());
         gruposComunes.retainAll(e2.getGruposEstudio());
         peso += gruposComunes.size() * PESO_GRUPO_ESTUDIO;
 
-        // 2. Valoraciones similares de contenidos
         peso += calcularSimilitudValoraciones(e1, e2) * PESO_VALORACION_SIMILAR;
 
         return peso;
@@ -129,7 +120,6 @@ public class GrafoAfinidad {
         Map<String, Double> valoracionesE1 = e1.getValoracionesContenidos();
         Map<String, Double> valoracionesE2 = e2.getValoracionesContenidos();
 
-        // Encuentra contenidos comunes valorados por ambos
         Set<String> contenidosComunes = new HashSet<>(valoracionesE1.keySet());
         contenidosComunes.retainAll(valoracionesE2.keySet());
 
@@ -147,7 +137,6 @@ public class GrafoAfinidad {
             magnitudE2 += v2 * v2;
         }
 
-        // Evitar división por cero
         if (magnitudE1 == 0 || magnitudE2 == 0) return 0;
 
         double similitud = productoPunto / (Math.sqrt(magnitudE1) * Math.sqrt(magnitudE2));
@@ -211,15 +200,12 @@ public class GrafoAfinidad {
                 obtenerTotalConexiones(),
                 calcularDensidadGrafo()));
 
-        // Detalle por estudiante
         grafo.forEach((estudiante, conexiones) -> {
-            // Cabecera por estudiante
             LOGGER.info(String.format("\n%s [%s] - %d conexiones:",
                     estudiante.getNombre(),
                     estudiante.getId(),
                     conexiones.size()));
 
-            // Ordenar conexiones por peso descendente
             conexiones.entrySet().stream()
                     .sorted(Map.Entry.<Estudiante, Integer>comparingByValue().reversed())
                     .forEach(entry -> {
@@ -251,13 +237,12 @@ public class GrafoAfinidad {
 
     // Nuevo método auxiliar para similitud completa
     private double calcularSimilitudCompleta(Estudiante e1, Estudiante e2) {
-        // 1. Normalizar grupos comunes (0-1)
+
         double maxGrupos = Math.max(1, Math.max(
                 e1.getGruposEstudio().size(),
                 e2.getGruposEstudio().size()));
         double simGrupos = contarGruposComunes(e1, e2) / maxGrupos;
 
-        // 2. Combinar con valoraciones (60% grupos, 40% valoraciones)
         return (0.6 * simGrupos) + (0.4 * calcularSimilitudValoraciones(e1, e2));
     }
 
@@ -268,7 +253,7 @@ public class GrafoAfinidad {
         return (2.0 * obtenerTotalConexiones()) / (n * (n - 1));
     }
 
-    // Nuevo metodo para calcular similitud completa
+
     private double calcularSimilitudTotal(Estudiante e1, Estudiante e2) {
         // 1. Componente de grupos (normalizado a 0-1)
         double maxGruposPosibles = Math.max(
@@ -355,7 +340,7 @@ public class GrafoAfinidad {
         return comunidades;
     }
 
-    // Métodos auxiliares privados
+
     private void validarEstudiante(Estudiante estudiante) {
         if (!grafo.containsKey(estudiante)) {
             LOGGER.log(Level.SEVERE, "Estudiante no encontrado: ID={0}", estudiante.getId());
@@ -387,7 +372,7 @@ public class GrafoAfinidad {
                 .forEach(vecino -> dfs(vecino, visitados, comunidad));
     }
 
-    // Métodos de consulta
+
     public int obtenerTotalEstudiantes() {
         return grafo.size();
     }
@@ -395,7 +380,7 @@ public class GrafoAfinidad {
     public int obtenerTotalConexiones() {
         return grafo.values().stream()
                 .mapToInt(Map::size)
-                .sum() / 2; // Dividido por 2 porque es grafo no dirigido
+                .sum() / 2;
     }
 
     @Override

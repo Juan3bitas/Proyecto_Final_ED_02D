@@ -24,7 +24,6 @@ public class UtilRedSocial {
         return instancia;
     }
 
-    // ==================== USUARIOS ====================
     public Usuario buscarUsuario(String usuarioId) {
         try {
             return utilPersistencia.buscarUsuarioPorId(usuarioId);
@@ -90,7 +89,6 @@ public class UtilRedSocial {
         return this.buscarUsuario(usuarioId);
     }
 
-    // ==================== CONTENIDOS ====================
     public Contenido buscarContenido(String contId) {
         return utilPersistencia.buscarContenidoPorId(contId);
     }
@@ -121,7 +119,6 @@ public class UtilRedSocial {
 
         if (estudiante != null && contenido != null) {
             estudiante.agregarContenido(idContenido);
-            // Ahora usando el método correcto
             this.actualizarEstudiante(estudiante);
         } else {
             utilLog.escribirLog(
@@ -132,7 +129,6 @@ public class UtilRedSocial {
         }
     }
 
-    // ==================== SOLICITUDES ====================
     public void crearSolicitud(SolicitudAyuda solicitud) {
         utilPersistencia.guardarSolicitud(solicitud);
     }
@@ -173,7 +169,6 @@ public class UtilRedSocial {
         this.crearSolicitud(ayuda);
     }
 
-    // ==================== GRUPOS ====================
 
     private GrupoEstudio crearNuevoGrupo(List<Estudiante> miembros, int numeroGrupo) throws OperacionFallidaException {
         return new GrupoEstudio(
@@ -295,14 +290,14 @@ public class UtilRedSocial {
                     if (!existeGrupo) {
                         interesesSecundarios.computeIfAbsent(interes, k -> new ArrayList<>())
                                 .add(estudiante);
-                        break; // Solo considerar un interés secundario por estudiante
+                        break;
                     }
                 }
             }
 
-            // Crear grupos con intereses secundarios no cubiertos
+
             for (Map.Entry<String, List<Estudiante>> entry : interesesSecundarios.entrySet()) {
-                if (entry.getValue().size() >= 3) { // Mínimo para grupo
+                if (entry.getValue().size() >= 3) {
                     grupos.add(crearGrupoPorInteres(entry.getValue(), entry.getKey(), grupos.size() + 1));
                 }
             }

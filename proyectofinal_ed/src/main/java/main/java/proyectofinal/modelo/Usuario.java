@@ -25,7 +25,7 @@ public abstract class Usuario {
     public Usuario(){}
     public Usuario(String id, String nombre, String correo, String contrasenia, boolean suspendido, int diasSuspension) {
         this.id = (id == null || id.isEmpty()) ? UtilId.generarIdAleatorio() : id;
-        this.nombre = nombre; // ✅ No usar requireNonNull en deserialización
+        this.nombre = nombre;
         this.correo = correo;
         this.contrasenia = contrasenia;
         this.suspendido = suspendido;

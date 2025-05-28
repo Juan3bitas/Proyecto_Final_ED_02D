@@ -20,13 +20,10 @@ public class UtilLog {
 
     private void configurarLogger() {
         try {
-            // Obtener la ruta del log desde propiedades o usar una por defecto
             String ruta = "persistencia/log/redSocial.log";
 
-            // 📂 Crear directorios si no existen
             Files.createDirectories(Paths.get(ruta).getParent());
 
-            // ✅ Forzar la creación del archivo si no existe
             if (!Files.exists(Paths.get(ruta))) {
                 Files.createFile(Paths.get(ruta));
             }
@@ -53,10 +50,9 @@ public class UtilLog {
     }
 
     public void escribirLog(String mensaje, Level nivel) {
-        System.out.println("📝 Registrando en el log: " + mensaje); // ✅ Depuración
+        System.out.println("📝 Registrando en el log: " + mensaje);
         logger.log(nivel, mensaje);
 
-        // 🔄 Forzar escritura inmediata en el archivo
         for (Handler handler : logger.getHandlers()) {
             if (handler instanceof FileHandler) {
                 handler.flush();
@@ -75,7 +71,6 @@ public class UtilLog {
         escribirLog(mensaje, Level.INFO);
     }
 
-    // 📌 Métodos para diferentes niveles de log
     public void logSevere(String mensaje) { escribirLog(mensaje, Level.SEVERE); }
     public void logWarning(String mensaje) { escribirLog(mensaje, Level.WARNING); }
     public void logInfo(String mensaje) { escribirLog(mensaje, Level.INFO); }

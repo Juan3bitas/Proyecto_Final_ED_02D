@@ -103,9 +103,7 @@ public class UtilModerador {
 
     public void mostrarGrafo() {
         GrafoAfinidad grafo = redSocial.getGrafoAfinidad();
-        //FALTAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
-        
-        // Simulación de visualización (en producción usaría una librería gráfica)
+
         System.out.println("=== VISUALIZACIÓN DEL GRAFO ===");
         System.out.println(grafo.toString());
     }

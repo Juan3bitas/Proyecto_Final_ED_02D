@@ -5,20 +5,47 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
+/**
+ * Clase que representa un árbol binario de búsqueda para almacenar contenidos.
+ * Permite insertar, eliminar, buscar y modificar contenidos basados en diferentes criterios de orden.
+ */
+
 public class ArbolContenidos {
     NodoContenido raiz;
     private final Comparator<Contenido> comparador;
 
 
+    /**
+     * Constructor que inicializa el árbol con un criterio de orden específico.
+     *
+     * @param criterio El criterio de orden para los contenidos (TEMA, AUTOR, FECHA).
+     * @throws IllegalArgumentException Si el criterio es nulo o no soportado.
+     */
+
     public ArbolContenidos(CriterioOrden criterio) {
         this.comparador = crearComparador(criterio);
     }
+
+    /**
+     * Inicializa el árbol con una lista de contenidos.
+     * Si la lista es nula o vacía, no se realiza ninguna acción.
+     *
+     * @param contenidos Lista de contenidos a insertar en el árbol.
+     */
 
     public void inicializarConLista(List<Contenido> contenidos) {
         if (contenidos != null && !contenidos.isEmpty()) {
             contenidos.forEach(this::insertar);
         }
     }
+
+    /**
+     * Crea un comparador basado en el criterio de orden especificado.
+     *
+     * @param criterio El criterio de orden para los contenidos (TEMA, AUTOR, FECHA).
+     * @return Un comparador que compara contenidos según el criterio especificado.
+     * @throws IllegalArgumentException Si el criterio es nulo o no soportado.
+     */
 
     private Comparator<Contenido> crearComparador(CriterioOrden criterio) {
         Objects.requireNonNull(criterio, "El criterio de orden no puede ser nulo");
@@ -35,6 +62,14 @@ public class ArbolContenidos {
         }
     }
 
+    /**
+     * Elimina un contenido del árbol.
+     * Si el contenido es nulo, lanza una excepción.
+     *
+     * @param contenido El contenido a eliminar.
+     * @return true si la eliminación fue exitosa, false si el contenido no estaba presente.
+     */
+
     public boolean eliminar(Contenido contenido) {
         if (contenido == null) {
             throw new IllegalArgumentException("El contenido a eliminar no puede ser nulo");
@@ -42,7 +77,6 @@ public class ArbolContenidos {
 
         System.out.println("[DEBUG] Intentando eliminar contenido ID: " + contenido.getId());
 
-        // Guardamos el tamaño antes para verificar si cambió
         int tamañoAntes = contarNodos();
 
         raiz = eliminarRec(raiz, contenido);
@@ -54,9 +88,23 @@ public class ArbolContenidos {
         return eliminadoExitoso;
     }
 
+    /**
+     * Cuenta el número de nodos en el árbol.
+     *
+     * @return El número total de nodos en el árbol.
+     */
+
     private int contarNodos() {
         return tamañoRec(raiz);
     }
+
+    /**
+     * Elimina un contenido del árbol de forma recursiva.
+     *
+     * @param nodo El nodo actual del árbol.
+     * @param contenido El contenido a eliminar.
+     * @return El nodo actualizado después de la eliminación.
+     */
 
     private NodoContenido eliminarRec(NodoContenido nodo, Contenido contenido) {
         if (nodo == null) {
@@ -70,28 +118,30 @@ public class ArbolContenidos {
         } else if (comparacion > 0) {
             nodo.derecho = eliminarRec(nodo.derecho, contenido);
         } else {
-            // Nodo a eliminar encontrado
 
-            // Caso 1: Nodo sin hijos o con un solo hijo
             if (nodo.izquierdo == null) {
                 return nodo.derecho;
             } else if (nodo.derecho == null) {
                 return nodo.izquierdo;
             }
 
-            // Caso 2: Nodo con dos hijos
-            // Encontrar el sucesor in-order (mínimo en el subárbol derecho)
+
             NodoContenido sucesor = encontrarMinimo(nodo.derecho);
 
-            // Copiar los datos del sucesor
             nodo.contenido = sucesor.contenido;
 
-            // Eliminar el sucesor
             nodo.derecho = eliminarRec(nodo.derecho, sucesor.contenido);
         }
 
         return nodo;
     }
+
+    /**
+     * Encuentra el nodo con el valor mínimo en un subárbol.
+     *
+     * @param nodo El nodo raíz del subárbol.
+     * @return El nodo con el valor mínimo.
+     */
 
     private NodoContenido encontrarMinimo(NodoContenido nodo) {
         while (nodo.izquierdo != null) {
@@ -100,6 +150,14 @@ public class ArbolContenidos {
         return nodo;
     }
 
+    /**
+     * Busca un contenido por su ID.
+     * Si el ID es nulo, lanza una excepción.
+     *
+     * @param contenidoId El ID del contenido a buscar.
+     * @return El contenido encontrado o null si no se encuentra.
+     */
+
     public Contenido buscarPorId(String contenidoId) {
         System.out.println("[DEBUG] Iniciando búsqueda para ID: " + contenidoId);
         Contenido resultado = buscarPorIdRec(raiz, contenidoId);
@@ -107,6 +165,14 @@ public class ArbolContenidos {
                 (resultado != null ? "Encontrado" : "No encontrado"));
         return resultado;
     }
+
+    /**
+     * Metodo recursivo para buscar un contenido por su ID.
+     *
+     * @param nodo El nodo actual del árbol.
+     * @param contenidoId El ID del contenido a buscar.
+     * @return El contenido encontrado o null si no se encuentra.
+     */
 
     private Contenido buscarPorIdRec(NodoContenido nodo, String contenidoId) {
         if (nodo == null) {
@@ -127,6 +193,13 @@ public class ArbolContenidos {
         return buscarPorIdRec(nodo.derecho, contenidoId);
     }
 
+    /**
+     * Modifica un contenido existente en el árbol.
+     * Si el contenido actualizado es nulo o no se encuentra, lanza una excepción.
+     *
+     * @param contenidoActualizado El contenido con los datos actualizados.
+     */
+
     public void modificar(Contenido contenidoActualizado) {
         Objects.requireNonNull(contenidoActualizado, "El contenido actualizado no puede ser nulo");
         Contenido contenidoExistente = buscarPorId(contenidoActualizado.getId());
@@ -138,6 +211,10 @@ public class ArbolContenidos {
         }
     }
 
+    /**
+     * Clase interna que representa un nodo del árbol.
+     * Contiene el contenido y referencias a los nodos izquierdo y derecho.
+     */
 
     private static class NodoContenido {
         Contenido contenido;
@@ -150,10 +227,24 @@ public class ArbolContenidos {
     }
 
 
+    /**
+     * Inserta un nuevo contenido en el árbol.
+     * Si el contenido es nulo, lanza una excepción.
+     *
+     * @param contenido El contenido a insertar.
+     */
+
     public void insertar(Contenido contenido) {
         raiz = insertarRec(raiz, contenido);
     }
 
+    /**
+     * Inserta un contenido de forma recursiva en el árbol.
+     *
+     * @param nodo El nodo actual del árbol.
+     * @param contenido El contenido a insertar.
+     * @return El nodo actualizado después de la inserción.
+     */
     private NodoContenido insertarRec(NodoContenido nodo, Contenido contenido) {
         if (nodo == null) {
             return new NodoContenido(contenido);
@@ -169,12 +260,28 @@ public class ArbolContenidos {
     }
 
 
+    /**
+     * Busca contenidos por tema.
+     * Si el tema es nulo o vacío, devuelve una lista vacía.
+     *
+     * @param tema El tema a buscar.
+     * @return Una lista de contenidos que coinciden con el tema.
+     */
+
     public List<Contenido> buscarPorTema(String tema) {
         List<Contenido> resultados = new ArrayList<>();
         buscarPorTemaRec(raiz, tema.toLowerCase(), resultados);
         resultados.sort(comparador); // Ordena según el criterio del árbol
         return resultados;
     }
+
+    /**
+     * Método recursivo para buscar contenidos por tema.
+     *
+     * @param nodo El nodo actual del árbol.
+     * @param tema El tema a buscar.
+     * @param resultados La lista donde se almacenan los resultados encontrados.
+     */
 
     private void buscarPorTemaRec(NodoContenido nodo, String tema, List<Contenido> resultados) {
         if (nodo == null) return;
@@ -187,12 +294,28 @@ public class ArbolContenidos {
         buscarPorTemaRec(nodo.derecho, tema, resultados);
     }
 
+    /**
+     * Busca contenidos por autor.
+     * Si el autor es nulo o vacío, devuelve una lista vacía.
+     *
+     * @param autor El autor a buscar.
+     * @return Una lista de contenidos que coinciden con el autor.
+     */
+
     public List<Contenido> buscarPorAutor(String autor) {
         List<Contenido> resultados = new ArrayList<>();
         buscarPorAutorRec(raiz, autor.toLowerCase(), resultados);
         resultados.sort(comparador);
         return resultados;
     }
+
+    /**
+     * Metodo recursivo para buscar contenidos por autor.
+     *
+     * @param nodo El nodo actual del árbol.
+     * @param autor El autor a buscar.
+     * @param resultados La lista donde se almacenan los resultados encontrados.
+     */
 
     private void buscarPorAutorRec(NodoContenido nodo, String autor, List<Contenido> resultados) {
         if (nodo == null) return;
@@ -206,6 +329,14 @@ public class ArbolContenidos {
     }
 
 
+    /**
+     * Obtiene todos los contenidos en orden (inorden).
+     * Si la lista es nula, se inicializa una nueva lista.
+     *
+     * @param contenidos Lista donde se almacenarán los contenidos en orden.
+     * @return Una lista de contenidos ordenados.
+     */
+
     public List<Contenido> obtenerTodosEnOrden(List<Contenido> contenidos) {
         if (contenidos == null) {
             contenidos = new ArrayList<>();
@@ -213,6 +344,13 @@ public class ArbolContenidos {
         inorden(raiz, contenidos);
         return contenidos;
     }
+
+    /**
+     * Metodo recursivo para recorrer el árbol en orden (inorden).
+     *
+     * @param nodo El nodo actual del árbol.
+     * @param contenidos La lista donde se almacenan los contenidos en orden.
+     */
 
     private void inorden(NodoContenido nodo, List<Contenido> contenidos) {
         if (nodo != null) {
@@ -223,13 +361,32 @@ public class ArbolContenidos {
     }
 
 
+    /**
+     * Verifica si el árbol está vacío.
+     *
+     * @return true si el árbol no contiene nodos, false en caso contrario.
+     */
+
     public boolean estaVacio() {
         return raiz == null;
     }
 
+    /**
+     * Obtiene el tamaño del árbol (número de nodos).
+     *
+     * @return El número total de nodos en el árbol.
+     */
+
     public int tamaño() {
         return tamañoRec(raiz);
     }
+
+    /**
+     * Método recursivo para calcular el tamaño del árbol.
+     *
+     * @param nodo El nodo actual del árbol.
+     * @return El número de nodos en el subárbol.
+     */
 
     private int tamañoRec(NodoContenido nodo) {
         if (nodo == null) return 0;

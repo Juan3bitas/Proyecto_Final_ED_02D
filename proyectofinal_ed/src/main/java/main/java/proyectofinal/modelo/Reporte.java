@@ -9,14 +9,13 @@ public class Reporte {
     private String idReporte;
     private String contenido;
     private Date fechaGeneracion;
-    
-    // Constructor vacío (para frameworks que lo necesiten)
+
     public Reporte() {
         this.idReporte = UtilId.generarIdAleatorio();
         this.fechaGeneracion = new Date();
     }
 
-    // Constructor principal
+
     public Reporte(String idReporte, String contenido, Date fechaGeneracion) {
         this.idReporte = (idReporte == null || idReporte.isEmpty()) ? 
                          UtilId.generarIdAleatorio() : idReporte;
