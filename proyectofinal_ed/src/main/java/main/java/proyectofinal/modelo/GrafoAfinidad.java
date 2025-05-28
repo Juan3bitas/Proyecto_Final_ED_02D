@@ -13,7 +13,7 @@ import java.util.stream.Collectors;
  */
 public class GrafoAfinidad {
     private static final Logger LOGGER = Logger.getLogger(GrafoAfinidad.class.getName());
-    private final Map<Estudiante, Map<Estudiante, Integer>> grafo;
+    public final Map<Estudiante, Map<Estudiante, Integer>> grafo;
 
     // Factores de ponderación configurables
     private final int PESO_BASE = 1;
@@ -410,4 +410,11 @@ public class GrafoAfinidad {
         });
         return sb.toString();
     }
+
+    public Iterable<? extends Estudiante> getEstudiantes() {
+        return grafo.keySet();
+    }
+
+
 }
+

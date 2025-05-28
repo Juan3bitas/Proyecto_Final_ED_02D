@@ -155,6 +155,13 @@ public void dejarGrupo(String grupoId) throws OperacionFallidaException {
         utilEstudiante.unirEstudianteAGrupo(this.getId(), grupoId);
     }
 
+    public String getNumeroContenidosPublicados() {
+        if (idsContenidosPublicados == null) {
+            return "0";
+        }
+        return String.valueOf(idsContenidosPublicados.size());
+    }
+
     // Excepción personalizada
     public class MiembroExistenteException extends OperacionFallidaException {
         public MiembroExistenteException(String idEstudiante, String idGrupo) {

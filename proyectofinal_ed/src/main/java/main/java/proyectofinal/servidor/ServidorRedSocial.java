@@ -425,6 +425,13 @@ public class ServidorRedSocial {
                     return manejarActualizarGrupo(datos);
                 case "ELIMINAR_GRUPO":
                     return manejarEliminarGrupo(datos);
+                case "OBTENER_GRAFO_AFINIDAD":
+                    return manejarObtenerGrafoAfinidad(datos);
+                case "OBTENER_ESTUDIANTES_CONEXIONES":
+                    return manejarObtenerConexionesEstudiantes(datos);
+                case "OBTENER_NIVELES_PARTICIPACION":
+                    return manejarObtenerNivelesParticipacion(datos);
+
 
                 default:
                     return crearRespuestaError("Operación no soportada");
@@ -438,6 +445,125 @@ public class ServidorRedSocial {
         }
 
     }
+
+    private static JsonObject manejarObtenerConexionesEstudiantes(JsonObject datos) {
+        try {
+            List<Estudiante> estudiantes = redSocial.obtenerTodosUsuarios().stream()
+                    .filter(u -> u instanceof Estudiante)
+                    .map(u -> (Estudiante) u)
+                    .collect(Collectors.toList());
+
+            JsonArray estudiantesJson = new JsonArray();
+            for (Estudiante est : estudiantes) {
+                JsonObject obj = new JsonObject();
+                obj.addProperty("id", est.getId());
+                obj.addProperty("nombre", est.getNombre());
+                obj.addProperty("conexiones", redSocial.getGrafoAfinidad().obtenerAdyacentes(est).size());
+                obj.addProperty("estado", est.isSuspendido() ? "Suspendido" : "Activo");
+                obj.addProperty("intereses", String.join(", ", est.getIntereses()));
+                estudiantesJson.add(obj);
+            }
+
+            JsonObject respuesta = crearRespuestaExito("Conexiones obtenidas");
+            respuesta.add("estudiantes", estudiantesJson);
+            return respuesta;
+
+        } catch (Exception e) {
+            return crearRespuestaError("Error al obtener conexiones: " + e.getMessage());
+        }
+    }
+
+    private static JsonObject manejarObtenerNivelesParticipacion(JsonObject datos) {
+        try {
+            JsonArray estudiantesJson = new JsonArray();
+
+            List<Usuario> usuarios = redSocial.obtenerTodosUsuarios();
+            for (Usuario u : usuarios) {
+                if (u instanceof Estudiante) {
+                    Estudiante est = (Estudiante) u;
+
+                    JsonObject obj = new JsonObject();
+                    obj.addProperty("nombre", est.getNombre());
+                    obj.addProperty("nivelParticipacion", est.getNumeroContenidosPublicados()); // Este método debe existir
+                    estudiantesJson.add(obj);
+                }
+            }
+
+            JsonObject respuesta = crearRespuestaExito("Niveles de participación obtenidos");
+            respuesta.add("estudiantes", estudiantesJson);
+            return respuesta;
+
+        } catch (Exception e) {
+            return crearRespuestaError("Error al obtener niveles de participación: " + e.getMessage());
+        }
+    }
+
+
+
+
+
+    private static JsonObject manejarObtenerGrafoAfinidad(JsonObject datos) {
+        try {
+            GrafoAfinidad grafo = redSocial.getGrafoAfinidad();
+            JsonObject grafoJson = new JsonObject();
+            JsonArray nodosJson = new JsonArray();
+            JsonArray aristasJson = new JsonArray();
+            Set<String> conexionesRegistradas = new HashSet<>();
+
+            for (Estudiante estudiante : grafo.getEstudiantes()) {
+                JsonObject nodo = new JsonObject();
+                nodo.addProperty("id", estudiante.getId());
+                nodo.addProperty("nombre", estudiante.getNombre());
+                nodosJson.add(nodo);
+
+                for (Estudiante vecino : grafo.obtenerAdyacentes(estudiante)) {
+                    String id1 = estudiante.getId();
+                    String id2 = vecino.getId();
+                    String clave = id1.compareTo(id2) < 0 ? id1 + "-" + id2 : id2 + "-" + id1;
+
+                    if (!conexionesRegistradas.contains(clave)) {
+                        conexionesRegistradas.add(clave);
+                        JsonObject arista = new JsonObject();
+                        arista.addProperty("origen", id1);
+                        arista.addProperty("destino", id2);
+                        arista.addProperty("peso", grafo.obtenerPesoAfinidad(estudiante, vecino));
+                        aristasJson.add(arista);
+                    }
+                }
+            }
+
+            grafoJson.add("nodos", nodosJson);
+            grafoJson.add("aristas", aristasJson);
+
+            // 🚨 SI SE PIDE ANALISIS COMPLETO, AÑADIR ESTADÍSTICAS
+            if (datos.has("analisis") && datos.get("analisis").getAsString().equals("completo")) {
+                grafoJson.addProperty("totalEstudiantes", grafo.obtenerTotalEstudiantes());
+                grafoJson.addProperty("totalConexiones", grafo.obtenerTotalConexiones());
+
+                // Afinidad promedio
+                double promedioAfinidad = grafo.obtenerTotalEstudiantes() > 1 ?
+                        grafo.grafo.values().stream()
+                                .flatMap(m -> m.values().stream())
+                                .mapToInt(Integer::intValue)
+                                .average()
+                                .orElse(0.0)
+                        : 0.0;
+                grafoJson.addProperty("afinidadPromedio", promedioAfinidad);
+
+                // Opcional: puedes agregar también comunidades detectadas, aislados, etc.
+                // grafoJson.add("comunidades", ...);
+            }
+
+            JsonObject respuesta = crearRespuestaExito("Grafo de afinidad obtenido");
+            respuesta.add("grafo", grafoJson);
+            return respuesta;
+
+        } catch (Exception e) {
+            return crearRespuestaError("Error al obtener el grafo de afinidad: " + e.getMessage());
+        }
+    }
+
+
 
 
 
