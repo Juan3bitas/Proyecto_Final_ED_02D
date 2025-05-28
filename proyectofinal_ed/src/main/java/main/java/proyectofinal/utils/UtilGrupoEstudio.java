@@ -3,6 +3,7 @@ package main.java.proyectofinal.utils;
 import main.java.proyectofinal.excepciones.OperacionFallidaException;
 import main.java.proyectofinal.modelo.Usuario;
 
+import java.util.Collection;
 import java.util.Objects;
 
 public class UtilGrupoEstudio {
@@ -87,5 +88,21 @@ public class UtilGrupoEstudio {
         if (grupoId.trim().isEmpty() || idObjeto.trim().isEmpty()) {
             throw new IllegalArgumentException("IDs no pueden estar vacíos");
         }
+    }
+
+    public Collection<Object> getContenidos(String idGrupo) {
+        Objects.requireNonNull(idGrupo, "ID de grupo no puede ser nulo");
+        if (idGrupo.trim().isEmpty()) {
+            throw new IllegalArgumentException("ID de grupo no puede estar vacío");
+        }
+        return utilRedSocial.obtenerContenidosDeGrupo(idGrupo);
+    }
+
+    public Collection<Object> getMensajes(String idGrupo) throws OperacionFallidaException {
+        Objects.requireNonNull(idGrupo, "ID de grupo no puede ser nulo");
+        if (idGrupo.trim().isEmpty()) {
+            throw new IllegalArgumentException("ID de grupo no puede estar vacío");
+        }
+        return utilRedSocial.obtenerMensajesDeGrupo(idGrupo);
     }
 }

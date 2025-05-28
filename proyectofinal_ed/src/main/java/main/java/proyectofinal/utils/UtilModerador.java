@@ -9,7 +9,15 @@ import main.java.proyectofinal.modelo.*;
 public class UtilModerador {
     private static UtilRedSocial utilRS = UtilRedSocial.getInstance();
     private static UtilModerador instancia;
-    private static RedSocial redSocial = new RedSocial(utilRS); // Instancia de RedSocial
+    private static RedSocial redSocial; // Instancia de RedSocial
+
+    static {
+        try {
+            redSocial = new RedSocial(utilRS);
+        } catch (OperacionFallidaException e) {
+            throw new RuntimeException(e);
+        }
+    }
 
     public static UtilModerador getInstance() {
         if (instancia == null) {
@@ -102,7 +110,7 @@ public class UtilModerador {
         System.out.println(grafo.toString());
     }
 
-    public List<GrupoEstudio> obtenerComunidades() {
+    public List<GrupoEstudio> obtenerComunidades() throws OperacionFallidaException {
         return utilRS.formarGruposAutomaticos(redSocial.getUsuarios());
     }
 }

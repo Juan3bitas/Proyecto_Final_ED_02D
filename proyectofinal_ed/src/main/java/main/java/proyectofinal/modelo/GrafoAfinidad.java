@@ -204,25 +204,86 @@ public class GrafoAfinidad {
      * Muestra el estado actual del grafo en los logs
      */
     public void mostrarEstado() {
-        LOGGER.info("=== ESTADO DEL GRAFO ===");
-        LOGGER.info("Total estudiantes: " + grafo.size());
-        LOGGER.info("Total conexiones: " + obtenerTotalConexiones());
+        // Encabezado con estadísticas globales
+        LOGGER.info("\n=== ESTADO DEL GRAFO DE AFINIDAD ===");
+        LOGGER.info(String.format("• Estudiantes: %d | Conexiones: %d | Densidad: %.2f",
+                grafo.size(),
+                obtenerTotalConexiones(),
+                calcularDensidadGrafo()));
 
+        // Detalle por estudiante
         grafo.forEach((estudiante, conexiones) -> {
-            LOGGER.info(String.format("Estudiante %s (%s) tiene %d conexiones:",
-                    estudiante.getId(), estudiante.getNombre(), conexiones.size()));
+            // Cabecera por estudiante
+            LOGGER.info(String.format("\n%s [%s] - %d conexiones:",
+                    estudiante.getNombre(),
+                    estudiante.getId(),
+                    conexiones.size()));
 
+            // Ordenar conexiones por peso descendente
             conexiones.entrySet().stream()
                     .sorted(Map.Entry.<Estudiante, Integer>comparingByValue().reversed())
-                    .forEach(entry -> LOGGER.info(String.format(
-                            "  -> %s (%s) - Peso: %d, Grupos comunes: %d, Similitud: %.2f",
-                            entry.getKey().getId(),
-                            entry.getKey().getNombre(),
-                            entry.getValue(),
-                            contarGruposComunes(estudiante, entry.getKey()),
-                            calcularSimilitudValoraciones(estudiante, entry.getKey())
-                    )));
+                    .forEach(entry -> {
+                        Estudiante conexion = entry.getKey();
+                        int gruposComunes = (int) contarGruposComunes(estudiante, conexion);
+                        double simValoraciones = calcularSimilitudValoraciones(estudiante, conexion);
+                        double simTotal = calcularSimilitudCompleta(estudiante, conexion);
+
+                        // Formato mejorado con emojis y alineación
+                        LOGGER.info(String.format(
+                                "   ├─ %s %s [%s]\n" +
+                                        "   │  ├─ Peso: %d\n" +
+                                        "   │  ├─ Grupos comunes: %d (de %d)\n" +
+                                        "   │  ├─ Similitud valoraciones: %.2f\n" +
+                                        "   │  └─ Similitud total: %.2f",
+                                (simTotal > 0.7 ? "🌟" : simTotal > 0.4 ? "↔️" : "➖"),
+                                conexion.getNombre(),
+                                conexion.getId(),
+                                entry.getValue(),
+                                gruposComunes,
+                                Math.max(estudiante.getGruposEstudio().size(), conexion.getGruposEstudio().size()),
+                                simValoraciones,
+                                simTotal
+                        ));
+                    });
         });
+        LOGGER.info("\n=== FIN DEL REPORTE ===\n");
+    }
+
+    // Nuevo método auxiliar para similitud completa
+    private double calcularSimilitudCompleta(Estudiante e1, Estudiante e2) {
+        // 1. Normalizar grupos comunes (0-1)
+        double maxGrupos = Math.max(1, Math.max(
+                e1.getGruposEstudio().size(),
+                e2.getGruposEstudio().size()));
+        double simGrupos = contarGruposComunes(e1, e2) / maxGrupos;
+
+        // 2. Combinar con valoraciones (60% grupos, 40% valoraciones)
+        return (0.6 * simGrupos) + (0.4 * calcularSimilitudValoraciones(e1, e2));
+    }
+
+    // Método para densidad del grafo
+    private double calcularDensidadGrafo() {
+        int n = grafo.size();
+        if (n <= 1) return 0;
+        return (2.0 * obtenerTotalConexiones()) / (n * (n - 1));
+    }
+
+    // Nuevo metodo para calcular similitud completa
+    private double calcularSimilitudTotal(Estudiante e1, Estudiante e2) {
+        // 1. Componente de grupos (normalizado a 0-1)
+        double maxGruposPosibles = Math.max(
+                e1.getGruposEstudio().size(),
+                e2.getGruposEstudio().size()
+        );
+        double simGrupos = maxGruposPosibles > 0 ?
+                contarGruposComunes(e1, e2) / maxGruposPosibles :
+                0.0;
+
+        // 2. Componente de valoraciones
+        double simValoraciones = calcularSimilitudValoraciones(e1, e2);
+
+        // 3. Combinación ponderada (ajustar según necesidades)
+        return (0.6 * simGrupos) + (0.4 * simValoraciones);
     }
 
     /**

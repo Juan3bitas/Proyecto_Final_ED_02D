@@ -41,7 +41,7 @@ public class Moderador extends Usuario {
         utilModerador.mostrarGrafo();
     }
 
-    public List<GrupoEstudio> detectarComunidades() {
+    public List<GrupoEstudio> detectarComunidades() throws OperacionFallidaException {
         return utilModerador.obtenerComunidades();
     }
 

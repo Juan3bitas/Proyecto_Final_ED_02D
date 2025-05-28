@@ -135,20 +135,33 @@ public void dejarGrupo(String grupoId) throws OperacionFallidaException {
     utilEstudiante.abandonarGrupo(this.getId(), grupoId);
 }
 
-public void unirseAGrupo(String grupoId) throws OperacionFallidaException {
-    Objects.requireNonNull(grupoId, "El ID del grupo no puede ser nulo");
-    if (grupoId.trim().isEmpty()) {
-        throw new IllegalArgumentException("El ID del grupo no puede estar vacío");
-    }
-    
-    // Verificar si el estudiante ya está en el grupo (asumiendo que UtilEstudiante tiene este método)
-    if (!utilEstudiante.estaEnGrupo(this.getId(), grupoId)) {
-        // Delegar la operación a UtilEstudiante
+    /**
+     * Agrega al estudiante a un grupo de estudio
+     * @param grupoId ID del grupo al que se quiere unir
+     * @throws OperacionFallidaException Si ocurre un error al unirse al grupo
+     */
+    public void unirseAGrupo(String grupoId) throws OperacionFallidaException {
+        Objects.requireNonNull(grupoId, "El ID del grupo no puede ser nulo");
+        grupoId = grupoId.trim();
+        if (grupoId.isEmpty()) {
+            throw new IllegalArgumentException("El ID del grupo no puede estar vacío");
+        }
+
+        if (utilEstudiante.estaEnGrupo(this.getId(), grupoId)) {
+            // Versión con excepción personalizada
+            throw new MiembroExistenteException(this.getId(), grupoId);
+        }
+
         utilEstudiante.unirEstudianteAGrupo(this.getId(), grupoId);
-    } else {
-        throw new OperacionFallidaException("El estudiante ya es miembro de este grupo");
     }
-}
+
+    // Excepción personalizada
+    public class MiembroExistenteException extends OperacionFallidaException {
+        public MiembroExistenteException(String idEstudiante, String idGrupo) {
+            super(String.format("El estudiante %s ya es miembro del grupo %s",
+                    idEstudiante, idGrupo));
+        }
+    }
 
 /**
  * Obtiene la lista de grupos a los que pertenece el estudiante
@@ -216,5 +229,28 @@ public String crearGrupo(String nombreGrupo, String descripcion) throws Operacio
     @Override
     public String getTipo() {
         return "ESTUDIANTE";
+    }
+
+    public Collection<Object> getGrupos() {
+        try {
+            return Collections.singleton(utilEstudiante.obtenerGruposDeEstudiante(this.getId()));
+        } catch (OperacionFallidaException e) {
+            System.out.println("Error al obtener grupos: " + e.getMessage());
+            return Collections.emptyList(); // Devuelve lista vacía en caso de error
+        }
+    }
+
+    public void agregarGrupo(String idGrupo) throws OperacionFallidaException {
+        Objects.requireNonNull(idGrupo, "El ID del grupo no puede ser nulo");
+        if (idGrupo.trim().isEmpty()) {
+            throw new IllegalArgumentException("El ID del grupo no puede estar vacío");
+        }
+
+        // Verificar si el estudiante ya está en el grupo
+        if (!utilEstudiante.estaEnGrupo(this.getId(), idGrupo)) {
+            utilEstudiante.unirEstudianteAGrupo(this.getId(), idGrupo);
+        } else {
+            System.out.println("El estudiante ya es miembro de este grupo");
+        }
     }
 }

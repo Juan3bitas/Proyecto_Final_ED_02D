@@ -19,6 +19,7 @@ public class OperacionFallidaException extends Exception {
     }
 
 
+
     public String getCodigoError() {
         return this.codigoError;
     }

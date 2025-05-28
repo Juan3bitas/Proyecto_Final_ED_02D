@@ -5,6 +5,8 @@ import java.time.LocalDateTime;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
+
+import main.java.proyectofinal.excepciones.OperacionFallidaException;
 import main.java.proyectofinal.modelo.*;
 
 public class UtilPersistencia {
@@ -836,10 +838,12 @@ public class UtilPersistencia {
             }
         } catch (IOException e) {
             utilLog.escribirLog("Error cargando grupos: " + e.getMessage(), Level.SEVERE);
+        } catch (OperacionFallidaException e) {
+            throw new RuntimeException(e);
         }
     }
 
-    private GrupoEstudio parsearGrupo(String csv) {
+    private GrupoEstudio parsearGrupo(String csv) throws OperacionFallidaException {
         String[] partes = csv.split("#");
         if (partes.length < 6) return null;
 
@@ -924,6 +928,139 @@ public class UtilPersistencia {
         } catch (Exception e) {
             utilLog.escribirLog("Error obteniendo valoraciones: " + e.getMessage(), Level.SEVERE);
             return Collections.emptyList();
+        }
+    }
+
+    public void agregarGrupos(List<GrupoEstudio> grupos) {
+        try {
+            utilLog.escribirLog("Agregando grupos", Level.INFO);
+            listaGruposCache.addAll(grupos);
+            guardarTodosGrupos();
+        } catch (IOException e) {
+            utilLog.escribirLog("Error agregando grupos: " + e.getMessage(), Level.SEVERE);
+            throw new PersistenciaException("Error al agregar grupos", e);
+        }
+    }
+
+    public List<Contenido> obtenerContenidosPorGrupo(String idGrupo) {
+        try {
+            utilLog.escribirLog("Obteniendo contenidos por grupo: " + idGrupo, Level.INFO);
+            GrupoEstudio grupo = buscarGrupoPorId(idGrupo);
+            if (grupo == null) {
+                return Collections.emptyList();
+            }
+            return listaContenidosCache.stream()
+                    .filter(c -> grupo.getIdContenidos().contains(c.getId()))
+                    .collect(Collectors.toList());
+        } catch (Exception e) {
+            utilLog.escribirLog("Error obteniendo contenidos por grupo: " + e.getMessage(), Level.SEVERE);
+            return Collections.emptyList();
+        }
+    }
+
+    /**
+     * Obtiene mensajes de un grupo específico (generalmente el actual)
+     * @param idGrupo ID del grupo (opcional, usa el grupo actual si es null)
+     * @return Colección inmodificable de mensajes
+     * @throws OperacionFallidaException Si el grupo no existe o hay errores de acceso
+     */
+    /**
+     * Obtiene todos los mensajes asociados a un grupo de estudio desde la persistencia
+     * @param idGrupo ID del grupo del cual se quieren obtener los mensajes
+     * @return Colección inmodificable de mensajes (nunca null)
+     * @throws OperacionFallidaException Si ocurre un error al acceder a la persistencia
+     */
+    public Collection<Object> obtenerMensajesPorGrupo(String idGrupo) throws OperacionFallidaException {
+        // 1. Validación inicial
+        if (idGrupo == null || idGrupo.trim().isEmpty()) {
+            utilLog.escribirLog("ID de grupo inválido al obtener mensajes: " + idGrupo, Level.WARNING);
+            return Collections.emptyList();
+        }
+
+        // 2. Verificar existencia del grupo
+        GrupoEstudio grupo = buscarGrupoPorId(idGrupo);
+        if (grupo == null) {
+            utilLog.escribirLog("No se encontró el grupo con ID: " + idGrupo, Level.WARNING);
+            return Collections.emptyList();
+        }
+
+        // 3. Obtener mensajes del archivo de persistencia
+        String rutaMensajes = utilProperties.obtenerPropiedad("rutaMensajes.txt");
+        File archivoMensajes = new File(rutaMensajes);
+
+        if (!archivoMensajes.exists()) {
+            utilLog.escribirLog("Archivo de mensajes no encontrado en: " + rutaMensajes, Level.INFO);
+            return Collections.emptyList();
+        }
+
+        List<Object> mensajes = new LinkedList<>();
+        long inicio = System.currentTimeMillis();
+
+        try (BufferedReader reader = new BufferedReader(new FileReader(archivoMensajes))) {
+            String linea;
+            while ((linea = reader.readLine()) != null) {
+                if (linea.startsWith(idGrupo + "|")) {
+                    Object mensaje = parsearMensaje(linea);
+                    if (mensaje != null) {
+                        mensajes.add(mensaje);
+                    }
+                }
+            }
+        } catch (IOException e) {
+            String errorMsg = "Error leyendo mensajes del grupo " + idGrupo;
+            utilLog.escribirLog(errorMsg + ": " + e.getMessage(), Level.SEVERE);
+        }
+
+        // 4. Registrar resultados
+        long duracion = System.currentTimeMillis() - inicio;
+        utilLog.escribirLog(String.format(
+                "Obtenidos %d mensajes para el grupo %s en %d ms",
+                mensajes.size(), idGrupo, duracion
+        ), Level.FINE);
+
+        return Collections.unmodifiableCollection(mensajes);
+    }
+
+    /**
+     * Parsea una línea del archivo de mensajes a un objeto Mensaje
+     * Formato esperado: grupoId|mensajeId|autorId|contenido|timestamp
+     */
+    private Object parsearMensaje(String linea) {
+        try {
+            String[] partes = linea.split("\\|");
+            if (partes.length < 5) {
+                utilLog.escribirLog("Formato de mensaje inválido: " + linea, Level.WARNING);
+                return null;
+            }
+
+            // Crear estructura básica del mensaje (puedes usar una clase específica si la tienes)
+            Map<String, Object> mensaje = new HashMap<>();
+            mensaje.put("grupoId", partes[0]);
+            mensaje.put("mensajeId", partes[1]);
+            mensaje.put("autorId", partes[2]);
+            mensaje.put("contenido", partes[3]);
+            mensaje.put("fecha", new Date(Long.parseLong(partes[4])));
+
+            // Si hay más campos (como tipo de mensaje, estado, etc.)
+            if (partes.length > 5) {
+                mensaje.put("tipo", partes[5]);
+            }
+
+            return mensaje;
+        } catch (Exception e) {
+            utilLog.escribirLog("Error parseando mensaje: " + e.getMessage(), Level.WARNING);
+            return null;
+        }
+    }
+
+    public void eliminarGrupo(String grupoId) {
+        try {
+            utilLog.escribirLog("Eliminando grupo: " + grupoId, Level.INFO);
+            listaGruposCache.removeIf(g -> g.getIdGrupo().equals(grupoId));
+            guardarTodosGrupos();
+        } catch (IOException e) {
+            utilLog.escribirLog("Error eliminando grupo: " + e.getMessage(), Level.SEVERE);
+            throw new PersistenciaException("Error al eliminar grupo", e);
         }
     }
 

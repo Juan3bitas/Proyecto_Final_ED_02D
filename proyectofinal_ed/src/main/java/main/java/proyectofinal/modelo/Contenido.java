@@ -49,6 +49,7 @@ public class Contenido {
         this.valoraciones = (valoraciones != null) ? valoraciones : new LinkedList<>();
     }
 
+
     //getters and setters
     public String getId(){
         return this.id;

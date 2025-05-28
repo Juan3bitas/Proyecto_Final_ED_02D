@@ -6,7 +6,7 @@ import java.util.List;
 import java.util.Objects;
 
 public class ArbolContenidos {
-    private NodoContenido raiz;
+    NodoContenido raiz;
     private final Comparator<Contenido> comparador;
 
 
@@ -35,8 +35,27 @@ public class ArbolContenidos {
         }
     }
 
-    public void eliminar(Contenido contenido) {
+    public boolean eliminar(Contenido contenido) {
+        if (contenido == null) {
+            throw new IllegalArgumentException("El contenido a eliminar no puede ser nulo");
+        }
+
+        System.out.println("[DEBUG] Intentando eliminar contenido ID: " + contenido.getId());
+
+        // Guardamos el tamaño antes para verificar si cambió
+        int tamañoAntes = contarNodos();
+
         raiz = eliminarRec(raiz, contenido);
+
+        int tamañoDespues = contarNodos();
+        boolean eliminadoExitoso = tamañoDespues < tamañoAntes;
+
+        System.out.println("[DEBUG] Eliminación " + (eliminadoExitoso ? "exitosa" : "fallida"));
+        return eliminadoExitoso;
+    }
+
+    private int contarNodos() {
+        return tamañoRec(raiz);
     }
 
     private NodoContenido eliminarRec(NodoContenido nodo, Contenido contenido) {
@@ -44,32 +63,37 @@ public class ArbolContenidos {
             return null;
         }
 
-        int cmp = comparador.compare(contenido, nodo.contenido);
+        int comparacion = contenido.getId().compareTo(nodo.contenido.getId());
 
-        if (cmp < 0) {
+        if (comparacion < 0) {
             nodo.izquierdo = eliminarRec(nodo.izquierdo, contenido);
-        } else if (cmp > 0) {
+        } else if (comparacion > 0) {
             nodo.derecho = eliminarRec(nodo.derecho, contenido);
         } else {
-            // Nodo encontrado
-            if (nodo.izquierdo == null && nodo.derecho == null) {
-                return null; // Sin hijos
-            } else if (nodo.izquierdo == null) {
-                return nodo.derecho; // Un solo hijo derecho
+            // Nodo a eliminar encontrado
+
+            // Caso 1: Nodo sin hijos o con un solo hijo
+            if (nodo.izquierdo == null) {
+                return nodo.derecho;
             } else if (nodo.derecho == null) {
-                return nodo.izquierdo; // Un solo hijo izquierdo
-            } else {
-                // Dos hijos: encontrar el sucesor (mínimo del subárbol derecho)
-                NodoContenido sucesor = encontrarMin(nodo.derecho);
-                nodo.contenido = sucesor.contenido; // Reemplazar contenido
-                nodo.derecho = eliminarRec(nodo.derecho, sucesor.contenido); // Eliminar el sucesor
+                return nodo.izquierdo;
             }
+
+            // Caso 2: Nodo con dos hijos
+            // Encontrar el sucesor in-order (mínimo en el subárbol derecho)
+            NodoContenido sucesor = encontrarMinimo(nodo.derecho);
+
+            // Copiar los datos del sucesor
+            nodo.contenido = sucesor.contenido;
+
+            // Eliminar el sucesor
+            nodo.derecho = eliminarRec(nodo.derecho, sucesor.contenido);
         }
 
         return nodo;
     }
 
-    private NodoContenido encontrarMin(NodoContenido nodo) {
+    private NodoContenido encontrarMinimo(NodoContenido nodo) {
         while (nodo.izquierdo != null) {
             nodo = nodo.izquierdo;
         }
@@ -77,24 +101,41 @@ public class ArbolContenidos {
     }
 
     public Contenido buscarPorId(String contenidoId) {
-        return buscarPorIdRec(raiz, contenidoId);
+        System.out.println("[DEBUG] Iniciando búsqueda para ID: " + contenidoId);
+        Contenido resultado = buscarPorIdRec(raiz, contenidoId);
+        System.out.println("[DEBUG] Resultado búsqueda ID " + contenidoId + ": " +
+                (resultado != null ? "Encontrado" : "No encontrado"));
+        return resultado;
     }
 
-    private Contenido buscarPorIdRec(NodoContenido raiz, String contenidoId) {
-        if (raiz == null) {
+    private Contenido buscarPorIdRec(NodoContenido nodo, String contenidoId) {
+        if (nodo == null) {
             return null;
         }
 
-        if (raiz.contenido.getId().equals(contenidoId)) {
-            return raiz.contenido;
+        System.out.println("[DEBUG] Visitando nodo con ID: " + nodo.contenido.getId());
+
+        if (nodo.contenido.getId().equals(contenidoId)) {
+            return nodo.contenido;
         }
 
-        Contenido resultadoIzquierdo = buscarPorIdRec(raiz.izquierdo, contenidoId);
-        if (resultadoIzquierdo != null) {
-            return resultadoIzquierdo;
+        Contenido izquierdo = buscarPorIdRec(nodo.izquierdo, contenidoId);
+        if (izquierdo != null) {
+            return izquierdo;
         }
 
-        return buscarPorIdRec(raiz.derecho, contenidoId);
+        return buscarPorIdRec(nodo.derecho, contenidoId);
+    }
+
+    public void modificar(Contenido contenidoActualizado) {
+        Objects.requireNonNull(contenidoActualizado, "El contenido actualizado no puede ser nulo");
+        Contenido contenidoExistente = buscarPorId(contenidoActualizado.getId());
+        if (contenidoExistente != null) {
+            eliminar(contenidoExistente);
+            insertar(contenidoActualizado);
+        } else {
+            throw new IllegalArgumentException("Contenido con ID " + contenidoActualizado.getId() + " no encontrado");
+        }
     }
 
 

@@ -1,6 +1,7 @@
 package main.java.proyectofinal.servidor;
 
 import com.google.gson.*;
+import main.java.proyectofinal.excepciones.OperacionFallidaException;
 import main.java.proyectofinal.modelo.*;
 import main.java.proyectofinal.utils.UtilRedSocial;
 
@@ -9,6 +10,7 @@ import java.lang.reflect.Type;
 import java.net.*;
 import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
@@ -20,13 +22,22 @@ import java.util.stream.Collectors;
 public class ServidorRedSocial {
     private static final int PUERTO = 12345;
     private static final int MAX_HILOS = 50;
-    private static final RedSocial redSocial = new RedSocial(new UtilRedSocial());
+    private static final RedSocial redSocial;
+
+    static {
+        try {
+            redSocial = new RedSocial(new UtilRedSocial());
+        } catch (OperacionFallidaException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     private static final ExecutorService threadPool = Executors.newFixedThreadPool(MAX_HILOS);
     private static final Gson gson = new GsonBuilder()
             .registerTypeAdapter(LocalDateTime.class, new LocalDateTimeAdapter())
             .setDateFormat("yyyy-MM-dd HH:mm:ss")
             .create();
-    private static final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+    private static final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
     private static final Logger LOGGER = Logger.getLogger(ServidorRedSocial.class.getName());
 
     public static void main(String[] args) {
@@ -149,6 +160,162 @@ public class ServidorRedSocial {
             return crearRespuestaError("Error en búsqueda: " + e.getMessage());
         }
     }
+    // En ServidorRedSocial.java
+
+    private static JsonObject manejarUnirseAGrupo(JsonObject datos) {
+        try {
+            if (!datos.has("grupoId") || !datos.has("usuarioId")) {
+                return crearRespuestaError("Faltan datos necesarios para unirse al grupo");
+            }
+
+            String grupoId = datos.get("grupoId").getAsString();
+            String usuarioId = datos.get("usuarioId").getAsString();
+
+            // Verificar que el grupo existe
+            GrupoEstudio grupo = redSocial.buscarGrupoEstudio(grupoId);
+            if (grupo == null) {
+                return crearRespuestaError("El grupo no existe");
+            }
+
+            // Verificar que el usuario no es ya miembro
+            if (grupo.getIdMiembros().contains(usuarioId)) {
+                return crearRespuestaError("Ya eres miembro de este grupo");
+            }
+
+            // Verificar límite de miembros
+            if (grupo.getIdMiembros().size() >= GrupoEstudio.MAX_MIEMBROS) {
+                return crearRespuestaError("El grupo ha alcanzado su capacidad máxima");
+            }
+
+            // Unir al usuario al grupo
+            if (redSocial.unirUsuarioAGrupo(usuarioId, grupoId)) {
+                JsonObject respuesta = crearRespuestaExito("Te has unido al grupo exitosamente");
+
+                // Devolver datos actualizados del grupo
+                JsonObject grupoJson = new JsonObject();
+                grupoJson.addProperty("id", grupo.getIdGrupo());
+                grupoJson.addProperty("nombre", grupo.getNombre());
+                grupoJson.addProperty("totalMiembros", grupo.getIdMiembros().size());
+                respuesta.add("grupo", grupoJson);
+
+                return respuesta;
+            }
+
+            return crearRespuestaError("No se pudo unir al grupo");
+        } catch (Exception e) {
+            return crearRespuestaError("Error al unirse al grupo: " + e.getMessage());
+        }
+    }
+
+    private static JsonObject manejarObtenerMiembrosGrupo(JsonObject datos) {
+        try {
+            // Null check for redSocial instance
+            if (redSocial == null) {
+                return crearRespuestaError("Sistema de grupos no disponible");
+            }
+
+            String grupoId = datos.get("grupoId").getAsString();
+            GrupoEstudio grupo = redSocial.buscarGrupoEstudio(grupoId);
+
+            if (grupo == null) {
+                return crearRespuestaError("Grupo no encontrado: " + grupoId);
+            }
+
+            // Null check for members list
+            List<String> idMiembros = grupo.getIdMiembros();
+            if (idMiembros == null) {
+                return crearRespuestaError("El grupo no tiene lista de miembros");
+            }
+
+            JsonArray miembrosJson = new JsonArray();
+            for (String miembroId : idMiembros) {
+                Usuario usuario = redSocial.buscarUsuario(miembroId);
+                if (usuario != null) {
+                    JsonObject miembroJson = new JsonObject();
+                    miembroJson.addProperty("id", usuario.getId());
+                    miembroJson.addProperty("nombre", usuario.getNombre());
+                    miembrosJson.add(miembroJson);
+                }
+            }
+
+            JsonObject respuesta = crearRespuestaExito("Miembros obtenidos");
+            respuesta.add("miembros", miembrosJson);
+            return respuesta;
+
+        } catch (Exception e) {
+            return crearRespuestaError("Error interno: " + e.getMessage());
+        }
+    }
+
+    private static JsonObject manejarObtenerContenidoGrupo(JsonObject datos) {
+        try {
+            if (!datos.has("grupoId")) {
+                return crearRespuestaError("Se requiere el ID del grupo");
+            }
+
+            String grupoId = datos.get("grupoId").getAsString();
+            GrupoEstudio grupo = redSocial.buscarGrupoEstudio(grupoId);
+            if (grupo == null) {
+                return crearRespuestaError("Grupo no encontrado");
+            }
+
+            JsonArray contenidoJson = new JsonArray();
+            grupo.getIdContenidos().forEach(contenidoId -> {
+                Contenido contenido = redSocial.buscarContenido(contenidoId);
+                if (contenido != null) {
+                    JsonObject contenidoItem = new JsonObject();
+                    contenidoItem.addProperty("id", contenido.getId());
+                    contenidoItem.addProperty("titulo", contenido.getTitulo());
+                    contenidoItem.addProperty("autor", contenido.getAutor());
+                    contenidoItem.addProperty("tema", contenido.getTema());
+                    contenidoItem.addProperty("fecha", dateFormat.format(contenido.getFecha()));
+                    contenidoJson.add(contenidoItem);
+                }
+            });
+
+            JsonObject respuesta = crearRespuestaExito("Contenido del grupo obtenido");
+            respuesta.add("contenido", contenidoJson);
+            return respuesta;
+        } catch (Exception e) {
+            return crearRespuestaError("Error al obtener contenido: " + e.getMessage());
+        }
+    }
+
+    private static JsonObject manejarEliminarContenidoGrupo(JsonObject datos) {
+        try {
+            if (!datos.has("grupoId") || !datos.has("contenidoId") || !datos.has("usuarioId")) {
+                return crearRespuestaError("Faltan datos necesarios");
+            }
+
+            String grupoId = datos.get("grupoId").getAsString();
+            String contenidoId = datos.get("contenidoId").getAsString();
+            String usuarioId = datos.get("usuarioId").getAsString();
+
+            // Verificar permisos (solo creador del contenido o moderador puede eliminarlo)
+            Contenido contenido = redSocial.buscarContenido(contenidoId);
+            if (contenido == null) {
+                return crearRespuestaError("Contenido no encontrado");
+            }
+
+            Usuario usuario = redSocial.buscarUsuario(usuarioId);
+            if (usuario == null) {
+                return crearRespuestaError("Usuario no válido");
+            }
+
+            if (!contenido.getAutor().equals(usuarioId) && !(usuario instanceof Moderador)) {
+                return crearRespuestaError("No tienes permisos para eliminar este contenido");
+            }
+
+            // Eliminar contenido del grupo
+            if (redSocial.eliminarContenidoDeGrupo(grupoId, contenidoId)) {
+                return crearRespuestaExito("Contenido eliminado del grupo");
+            }
+
+            return crearRespuestaError("No se pudo eliminar el contenido");
+        } catch (Exception e) {
+            return crearRespuestaError("Error al eliminar contenido: " + e.getMessage());
+        }
+    }
 
     private static void manejarCliente(Socket socket) {
         String clienteIp = socket.getInetAddress().getHostAddress();
@@ -204,7 +371,6 @@ public class ServidorRedSocial {
                     return manejarActualizarUsuario(datos);
                 case "ELIMINAR_USUARIO":
                     return manejarEliminarUsuario(datos);
-                case "OBTENER_INFO_USUARIO":
                 case "OBTENER_USUARIO":
                     return manejarObtenerUsuario(datos);
                 case "OBTENER_DATOS_MODERADOR":
@@ -243,6 +409,23 @@ public class ServidorRedSocial {
                     return manejarObtenerContenidoCompleto(datos);
                 case "OBTENER_TODOS_USUARIOS":
                     return manejarObtenerTodosUsuarios(datos);
+                case "ACTUALIZAR_CONTENIDO":
+                    return manejarActualizarContenido(datos);
+                case "UNIRSE_GRUPO":
+                    return manejarUnirseAGrupo(datos);
+                case "OBTENER_MIEMBROS_GRUPO":
+                    return manejarObtenerMiembrosGrupo(datos);
+                case "OBTENER_CONTENIDO_GRUPO":
+                    return manejarObtenerContenidoGrupo(datos);
+                case "ELIMINAR_CONTENIDO_GRUPO":
+                    return manejarEliminarContenidoGrupo(datos);
+                case "OBTENER_GRUPOS_ESTUDIO":
+                    return manejarObtenerGruposEstudio(datos);
+                case "ACTUALIZAR_GRUPO":
+                    return manejarActualizarGrupo(datos);
+                case "ELIMINAR_GRUPO":
+                    return manejarEliminarGrupo(datos);
+
                 default:
                     return crearRespuestaError("Operación no soportada");
             }
@@ -254,6 +437,237 @@ public class ServidorRedSocial {
             return crearRespuestaError("Error interno del servidor");
         }
 
+    }
+
+
+
+    private static JsonObject manejarEliminarGrupo(JsonObject datos) {
+        try {
+            if (!datos.has("grupoId") || !datos.has("usuarioId")) {
+                return crearRespuestaError("Faltan datos necesarios para eliminar el grupo");
+            }
+            String grupoId = datos.get("grupoId").getAsString();
+            String usuarioId = datos.get("usuarioId").getAsString();
+            // Verificar que el grupo existe
+            GrupoEstudio grupo = redSocial.buscarGrupoEstudio(grupoId);
+            if (grupo == null) {
+                return crearRespuestaError("El grupo no existe");
+            }
+
+            // Eliminar el grupo
+            if (redSocial.eliminarGrupo(grupoId)) {
+                return crearRespuestaExito("Grupo eliminado correctamente");
+            }
+            return crearRespuestaError("No se pudo eliminar el grupo");
+        } catch (Exception e) {
+            return crearRespuestaError("Error al eliminar el grupo: " + e.getMessage());
+        }
+    }
+
+    private static JsonObject manejarActualizarGrupo(JsonObject datos) {
+        try {
+            if (!datos.has("grupoId") || !datos.has("nombre") || !datos.has("descripcion") || !datos.has("usuarioId")) {
+                return crearRespuestaError("Faltan datos necesarios para actualizar el grupo");
+            }
+            String grupoId = datos.get("grupoId").getAsString();
+            String nombre = datos.get("nombre").getAsString();
+            String descripcion = datos.get("descripcion").getAsString();
+            String usuarioId = datos.get("usuarioId").getAsString();
+            // Verificar que el grupo existe
+            GrupoEstudio grupo = redSocial.buscarGrupoEstudio(grupoId);
+            if (grupo == null) {
+                return crearRespuestaError("El grupo no existe");
+            }
+            // Actualizar los datos del grupo
+            grupo.setNombre(nombre);
+            grupo.setDescripcion(descripcion);
+
+            // Guardar los cambios en el sistema
+            if (redSocial.actualizarGrupo(grupo)) {
+                return crearRespuestaExito("Grupo actualizado correctamente");
+            }
+            return crearRespuestaError("No se pudo actualizar el grupo");
+        } catch (Exception e) {
+            return crearRespuestaError("Error al actualizar el grupo: " + e.getMessage());
+        }
+    }
+
+    private static JsonObject manejarObtenerGruposEstudio(JsonObject datos) {
+        // Constantes de configuración
+        final int MAX_MIEMBROS_PARA_DETALLE = 20;
+        final boolean INCLUIR_NO_MIEMBROS = true;
+
+        try {
+            // 1. Validaciones iniciales
+            if (redSocial == null) {
+                return crearRespuestaError("Sistema de red social no disponible");
+            }
+
+            if (!datos.has("userId")) {
+                return crearRespuestaError("Se requiere el ID de usuario");
+            }
+
+            String userId = datos.get("userId").getAsString();
+            Usuario usuario = redSocial.buscarUsuario(userId);
+            if (usuario == null) {
+                return crearRespuestaError("Usuario no encontrado");
+            }
+
+            // 2. Procesamiento de grupos
+            long inicio = System.currentTimeMillis();
+
+            // Formar nuevos grupos solo si el usuario es estudiante
+            List<GrupoEstudio> nuevosGrupos = Collections.emptyList();
+            if (usuario instanceof Estudiante) {
+                nuevosGrupos = redSocial.formarGruposAutomaticos(redSocial.getUsuarios());
+                System.out.printf("Formados %d nuevos grupos en %d ms%n",
+                        nuevosGrupos.size(),
+                        System.currentTimeMillis() - inicio);
+            }
+
+            // Obtener todos los grupos optimizados
+            List<GrupoEstudio> todosGrupos = redSocial.obtenerTodosGrupos();
+
+            // 3. Construcción de respuesta
+            JsonArray gruposJson = new JsonArray();
+            int gruposComoMiembro = 0;
+
+            for (GrupoEstudio grupo : todosGrupos) {
+                // Filtro opcional: solo grupos donde es miembro
+                boolean esMiembro = grupo.getIdMiembros().contains(userId);
+                if (!INCLUIR_NO_MIEMBROS && !esMiembro) continue;
+
+                if (esMiembro) gruposComoMiembro++;
+
+                JsonObject grupoJson = new JsonObject();
+                grupoJson.addProperty("id", grupo.getIdGrupo());
+                grupoJson.addProperty("nombre", grupo.getNombre());
+                grupoJson.addProperty("descripcion", grupo.getDescripcion());
+                grupoJson.addProperty("esMiembro", esMiembro);
+                grupoJson.addProperty("fechaCreacion", grupo.getFechaCreacion().toString());
+                grupoJson.addProperty("totalMiembros", grupo.getIdMiembros().size());
+
+                // Detalle de miembros solo si es relevante
+                if (esMiembro || grupo.getIdMiembros().size() <= MAX_MIEMBROS_PARA_DETALLE) {
+                    JsonArray miembrosJson = new JsonArray();
+                    grupo.getIdMiembros().stream()
+                            .map(redSocial::buscarUsuario)
+                            .filter(Objects::nonNull)
+                            .forEach(miembro -> {
+                                JsonObject miembroJson = new JsonObject();
+                                miembroJson.addProperty("id", miembro.getId());
+                                miembroJson.addProperty("nombre", miembro.getNombre());
+                                miembrosJson.add(miembroJson);
+                            });
+                    grupoJson.add("miembros", miembrosJson);
+                }
+
+                gruposJson.add(grupoJson);
+            }
+
+            // 4. Estadísticas adicionales
+            JsonObject respuesta = crearRespuestaExito("Grupos obtenidos exitosamente");
+            respuesta.add("grupos", gruposJson);
+            respuesta.addProperty("totalGrupos", todosGrupos.size());
+            respuesta.addProperty("gruposComoMiembro", gruposComoMiembro);
+            respuesta.addProperty("nuevosGruposCreados", nuevosGrupos.size());
+            respuesta.addProperty("tiempoProcesamiento", System.currentTimeMillis() - inicio + " ms");
+
+            return respuesta;
+
+        } catch (Exception e) {
+            System.err.println("Error en manejarObtenerGruposEstudio: " + e.getMessage());
+            e.printStackTrace();
+            return crearRespuestaError("Error interno al procesar grupos");
+        }
+    }
+
+    private static JsonObject manejarActualizarContenido(JsonObject datos) {
+        try {
+            // Validar estructura básica
+            if (!datos.has("contenido")) {
+                return crearRespuestaError("Se requieren los datos del contenido");
+            }
+
+            JsonObject contenidoJson = datos.getAsJsonObject("contenido");
+
+            // Validar que el ID esté presente
+            if (!contenidoJson.has("id") || contenidoJson.get("id").isJsonNull()) {
+                return crearRespuestaError("Se requiere el ID del contenido");
+            }
+
+            String id = contenidoJson.get("id").getAsString();
+
+            // Buscar el contenido existente
+            Contenido contenidoExistente = redSocial.buscarContenido(id);
+            if (contenidoExistente == null) {
+                return crearRespuestaError("No se encontró el contenido con ID: " + id);
+            }
+
+            // Actualizar campos
+            if (contenidoJson.has("titulo")) {
+                contenidoExistente.setTitulo(contenidoJson.get("titulo").getAsString().trim());
+            }
+
+            if (contenidoJson.has("autor")) {
+                contenidoExistente.setAutor(contenidoJson.get("autor").getAsString().trim());
+            }
+
+            if (contenidoJson.has("tema")) {
+                contenidoExistente.setTema(contenidoJson.get("tema").getAsString().trim());
+            }
+
+            if (contenidoJson.has("descripcion")) {
+                contenidoExistente.setDescripcion(contenidoJson.get("descripcion").getAsString().trim());
+            }
+
+            if (contenidoJson.has("contenido")) {
+                contenidoExistente.setContenido(contenidoJson.get("contenido").getAsString().trim());
+            }
+
+            if (contenidoJson.has("tipo")) {
+                try {
+                    TipoContenido tipo = TipoContenido.valueOf(
+                            contenidoJson.get("tipo").getAsString().trim().toUpperCase());
+                    contenidoExistente.setTipo(tipo);
+                } catch (IllegalArgumentException e) {
+                    return crearRespuestaError("Tipo de contenido inválido. Valores permitidos: " +
+                            Arrays.toString(TipoContenido.values()));
+                }
+            }
+
+            if (contenidoJson.has("fecha")) {
+                try {
+                    LocalDateTime fecha = LocalDateTime.parse(
+                            contenidoJson.get("fecha").getAsString(),
+                            DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+                    contenidoExistente.setFecha(fecha);
+                } catch (Exception e) {
+                    System.err.println("Error al parsear fecha, manteniendo fecha existente");
+                }
+            }
+
+            // Actualizar en el sistema
+            if (redSocial.actualizarContenido(contenidoExistente)) {
+                JsonObject respuesta = crearRespuestaExito("Contenido actualizado correctamente");
+
+                // Devolver datos actualizados
+                JsonObject contenidoRespuesta = new JsonObject();
+                contenidoRespuesta.addProperty("id", contenidoExistente.getId());
+                contenidoRespuesta.addProperty("titulo", contenidoExistente.getTitulo());
+                contenidoRespuesta.addProperty("autor", contenidoExistente.getAutor());
+                contenidoRespuesta.addProperty("tema", contenidoExistente.getTema());
+                respuesta.add("contenido", contenidoRespuesta);
+
+                return respuesta;
+            }
+
+            return crearRespuestaError("No se pudo guardar la actualización en el sistema");
+
+        } catch (Exception e) {
+            System.err.println("Error al actualizar contenido: " + e.getMessage());
+            return crearRespuestaError("Error interno al procesar la actualización");
+        }
     }
 
     private static JsonObject manejarObtenerTodosUsuarios(JsonObject datos) {
@@ -331,69 +745,122 @@ public class ServidorRedSocial {
     }
 
     private static JsonObject manejarEliminarContenido(JsonObject datos) {
+        // Validación básica de entrada
+        if (!datos.has("contenidoId") || !datos.has("moderadorId")) {
+            return crearRespuestaError("Se requieren ambos IDs: contenidoId y moderadorId");
+        }
+
+        String contenidoId = datos.get("contenidoId").getAsString().trim();
+        String moderadorId = datos.get("moderadorId").getAsString().trim();
+
+        if (contenidoId.isEmpty() || moderadorId.isEmpty()) {
+            return crearRespuestaError("Los IDs no pueden estar vacíos");
+        }
+
         try {
-            if (!datos.has("contenidoId") || !datos.has("moderadorId")) {
-                return crearRespuestaError("Faltan datos para eliminar contenido");
-            }
+            System.out.println("[DEBUG] Intentando eliminar contenido ID: " + contenidoId);
+            System.out.println("[DEBUG] Solicitado por moderador ID: " + moderadorId);
 
-            String contenidoId = datos.get("contenidoId").getAsString();
-            String moderadorId = datos.get("moderadorId").getAsString();
-
-            // Verificar que el moderador existe
+            // Verificar permisos del moderador
             Usuario moderador = redSocial.buscarUsuario(moderadorId);
             if (moderador == null || !(moderador instanceof Moderador)) {
+                System.out.println("[WARN] Intento de eliminación por usuario no autorizado: " + moderadorId);
                 return crearRespuestaError("No tienes permisos para esta acción");
             }
 
-            if (redSocial.eliminarContenido(contenidoId)) {
+            // Intentar eliminación
+            boolean eliminado = redSocial.eliminarContenido(contenidoId);
+
+            if (eliminado) {
+                System.out.println("[INFO] Contenido eliminado exitosamente: " + contenidoId);
                 return crearRespuestaExito("Contenido eliminado correctamente");
+            } else {
+                System.out.println("[WARN] No se pudo eliminar el contenido: " + contenidoId);
+                return crearRespuestaError("El contenido no existe o no se pudo eliminar");
             }
-            return crearRespuestaError("No se pudo eliminar el contenido");
+
+        } catch (IllegalArgumentException e) {
+            System.err.println("[ERROR] Error de validación al eliminar: " + e.getMessage());
+            return crearRespuestaError(e.getMessage());
         } catch (Exception e) {
-            return crearRespuestaError("Error al eliminar contenido: " + e.getMessage());
+            System.err.println("[ERROR] Excepción inesperada al eliminar contenido " + contenidoId + ": " + e.getMessage());
+            e.printStackTrace();
+            return crearRespuestaError("Error interno al procesar la solicitud");
         }
     }
 
     private static JsonObject manejarObtenerContenidoCompleto(JsonObject datos) {
+        // Validación mejorada
+        if (!datos.has("contenidoId")) {
+            return crearRespuestaError("Se requiere el campo 'contenidoId'");
+        }
+
+        String contenidoId = datos.get("contenidoId").getAsString().trim();
+        if (contenidoId.isEmpty()) {
+            return crearRespuestaError("El ID del contenido no puede estar vacío");
+        }
+
         try {
-            if (!datos.has("contenidoId")) {
-                return crearRespuestaError("Falta el ID del contenido");
-            }
-
-            String contenidoId = datos.get("contenidoId").getAsString();
             Contenido contenido = redSocial.buscarContenido(contenidoId);
-            if (contenido == null) {
-                return crearRespuestaError("Contenido no encontrado");
+            JsonObject contenidoJson = construirJsonContenido(contenidoId, contenido);
+
+            JsonObject respuesta = crearRespuestaExito("Contenido obtenido exitosamente");
+            respuesta.add("contenido", contenidoJson);
+            return respuesta;
+
+        } catch (IllegalArgumentException e) {
+            System.err.println("Error de búsqueda: " + e.getMessage());
+            return crearRespuestaError("No se encontró contenido con ID " + contenidoId);
+        } catch (Exception e) {
+            System.err.println("Error inesperado: " + e.getMessage());
+            return crearRespuestaError("Error interno al procesar la solicitud");
+        }
+    }
+
+    // Método auxiliar para construir el JSON del contenido
+    private static JsonObject construirJsonContenido(String contenidoId, Contenido contenido) {
+        JsonObject contenidoJson = new JsonObject();
+
+        // Datos básicos
+        contenidoJson.addProperty("id", contenido.getId());
+        contenidoJson.addProperty("titulo", contenido.getTitulo());
+        contenidoJson.addProperty("autor", contenido.getAutor());
+        contenidoJson.addProperty("tema", contenido.getTema());
+        contenidoJson.addProperty("descripcion", contenido.getDescripcion());
+        contenidoJson.addProperty("tipo", contenido.getTipo().name());
+        contenidoJson.addProperty("contenido", contenido.getContenido());
+
+        // Manejo de fecha
+        try {
+            LocalDateTime fechaLocal = contenido.getFecha();
+            if (fechaLocal != null) {
+                Date fecha = Date.from(fechaLocal.atZone(ZoneId.systemDefault()).toInstant());
+                contenidoJson.addProperty("fechaCreacion", dateFormat.format(fecha));
+            } else {
+                contenidoJson.addProperty("fechaCreacion", "");
+                System.err.println("Advertencia: Fecha es null para contenido ID: " + contenidoId);
             }
+        } catch (Exception e) {
+            System.err.println("Error procesando fecha para contenido ID " + contenidoId + ": " + e.getMessage());
+            contenidoJson.addProperty("fechaCreacion", "");
+        }
 
-            JsonObject contenidoJson = new JsonObject();
-            contenidoJson.addProperty("id", contenido.getId());
-            contenidoJson.addProperty("titulo", contenido.getTitulo());
-            contenidoJson.addProperty("autor", contenido.getAutor());
-            contenidoJson.addProperty("tema", contenido.getTema());
-            contenidoJson.addProperty("descripcion", contenido.getDescripcion());
-            contenidoJson.addProperty("tipo", contenido.getTipo().name());
-            contenidoJson.addProperty("fechaCreacion", dateFormat.format(contenido.getFecha()));
-            contenidoJson.addProperty("contenido", contenido.getContenido());
-
-            JsonArray valoracionesJson = new JsonArray();
+        // Valoraciones
+        JsonArray valoracionesJson = new JsonArray();
+        if (contenido.getValoraciones() != null && !contenido.getValoraciones().isEmpty()) {
             for (Valoracion valoracion : contenido.getValoraciones()) {
                 JsonObject v = new JsonObject();
                 v.addProperty("usuarioId", valoracion.getUsuarioId());
                 v.addProperty("valor", valoracion.getValor());
-                v.addProperty("comentario", valoracion.getComentario());
+                v.addProperty("comentario",
+                        valoracion.getComentario() != null ? valoracion.getComentario() : "");
                 valoracionesJson.add(v);
             }
-            contenidoJson.add("valoraciones", valoracionesJson);
-
-            JsonObject respuesta = crearRespuestaExito("Contenido obtenido");
-            respuesta.add("contenido", contenidoJson);
-            return respuesta;
-        } catch (Exception e) {
-            return crearRespuestaError("Error al obtener contenido: " + e.getMessage());
         }
-    }
+        contenidoJson.add("valoraciones", valoracionesJson);
 
+        return contenidoJson;
+    }
     ///
     private static JsonObject manejarObtenerSugerencias(JsonObject datos) {
         try {
@@ -547,10 +1014,17 @@ public class ServidorRedSocial {
                     JsonObject v = new JsonObject();
                     v.addProperty("id", valoracion.getIdValoracion());
 
+                    // Buscar usuario y manejar caso cuando no se encuentra
                     Usuario autor = redSocial.buscarUsuario(valoracion.getIdAutor());
-                    String nombreAutor = autor != null ? autor.getNombre() : "Anónimo";
+                    if (autor != null) {
+                        v.addProperty("autor", autor.getNombre());
+                        v.addProperty("autorId", autor.getId()); // Incluir ID para referencia
+                    } else {
+                        // Si no se encuentra el usuario, usar el ID original como nombre
+                        v.addProperty("autor", "Usuario " + valoracion.getIdAutor());
+                        v.addProperty("autorId", valoracion.getIdAutor());
+                    }
 
-                    v.addProperty("autor", nombreAutor);
                     v.addProperty("puntuacion", valoracion.getValor());
                     v.addProperty("comentario", valoracion.getComentario());
                     v.addProperty("fecha", dateFormat.format(valoracion.getFecha()));
@@ -558,11 +1032,10 @@ public class ServidorRedSocial {
                 }
             }
 
-            // Si no hay valoraciones en el campo 'valoraciones', pero sí en 'contenido'
+            // Procesar valoraciones embebidas en el campo 'contenido' si no hay en 'valoraciones'
             if (valoracionesJson.size() == 0 && contenido.getContenido() != null &&
                     contenido.getContenido().contains("~")) {
 
-                // Parsear valoraciones del campo 'contenido'
                 String[] valoracionesStr = contenido.getContenido().split("\\|");
                 for (String valoracionStr : valoracionesStr) {
                     if (valoracionStr.trim().isEmpty()) continue;
@@ -571,7 +1044,17 @@ public class ServidorRedSocial {
                     if (partes.length >= 7) {
                         JsonObject v = new JsonObject();
                         v.addProperty("id", partes[0]);
-                        v.addProperty("autor", "Usuario " + partes[3]); // ID como nombre temporal
+
+                        // Buscar usuario para valoraciones embebidas
+                        Usuario autorEmbebido = redSocial.buscarUsuario(partes[3]);
+                        if (autorEmbebido != null) {
+                            v.addProperty("autor", autorEmbebido.getNombre());
+                            v.addProperty("autorId", autorEmbebido.getId());
+                        } else {
+                            v.addProperty("autor", "Usuario " + partes[3]);
+                            v.addProperty("autorId", partes[3]);
+                        }
+
                         v.addProperty("puntuacion", Integer.parseInt(partes[4]));
                         v.addProperty("comentario", partes[6]);
                         v.addProperty("fecha", new SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
@@ -767,15 +1250,14 @@ public class ServidorRedSocial {
                 // FIX: Manejo seguro de fechas
                 try {
                     if (contenido.getFecha() != null) {
-                        // Reemplaza el bloque de fecha con:
-                        contenidoJson.addProperty("fechaCreacion", contenido.getFecha().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+                        contenidoJson.addProperty("fechaCreacion",
+                                new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(contenido.getFecha()));
                     } else {
-                        contenidoJson.addProperty("fechaCreacion", dateFormat.format(new Date()));
+                        contenidoJson.addProperty("fechaCreacion",
+                                new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date()));
                     }
                 } catch (Exception e) {
-                    // Si hay error formateando la fecha, usar fecha actual
-                    contenidoJson.addProperty("fechaCreacion", dateFormat.format(new Date()));
-                    System.err.println("Error al formatear fecha: " + e.getMessage());
+                    contenidoJson.addProperty("fechaCreacion", "Fecha no disponible");
                 }
 
                 contenidoJson.addProperty("contenido", contenido.getContenido());

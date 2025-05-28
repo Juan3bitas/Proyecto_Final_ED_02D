@@ -175,7 +175,7 @@ public class UtilRedSocial {
 
     // ==================== GRUPOS ====================
 
-    private GrupoEstudio crearNuevoGrupo(List<Estudiante> miembros, int numeroGrupo) {
+    private GrupoEstudio crearNuevoGrupo(List<Estudiante> miembros, int numeroGrupo) throws OperacionFallidaException {
         return new GrupoEstudio(
                 "GRP-" + UUID.randomUUID().toString().substring(0, 8),
                 "Grupo " + numeroGrupo,
@@ -188,37 +188,138 @@ public class UtilRedSocial {
         );
     }
 
-    public List<GrupoEstudio> formarGruposAutomaticos(List<Usuario> usuarios) {
-        // 1. Filtrar estudiantes y mezclar
+    public List<GrupoEstudio> formarGruposAutomaticos(List<Usuario> usuarios) throws OperacionFallidaException {
+        // 1. Filtrar solo estudiantes
         List<Estudiante> estudiantes = usuarios.stream()
                 .filter(u -> u instanceof Estudiante)
                 .map(u -> (Estudiante) u)
                 .collect(Collectors.toList());
-        Collections.shuffle(estudiantes);
 
-        // 2. Crear grupos
-        final int TAMAÑO_GRUPO = 5;
-        List<GrupoEstudio> grupos = new ArrayList<>();
-
-        for (int i = 0; i < estudiantes.size(); i += TAMAÑO_GRUPO) {
-            List<Estudiante> miembros = estudiantes.subList(
-                    i,
-                    Math.min(i + TAMAÑO_GRUPO, estudiantes.size())
-            );
-
-            grupos.add(new GrupoEstudio(
-                    "GRP-" + UUID.randomUUID().toString().substring(0, 8),
-                    "Grupo " + (grupos.size() + 1),
-                    "Grupo autoformado",
-                    new LinkedList<>(miembros.stream()
-                            .map(Estudiante::getId)
-                            .collect(Collectors.toList())),
-                    new LinkedList<>(),
-                    new Date()
-            ));
+        if (estudiantes.isEmpty()) {
+            return Collections.emptyList();
         }
 
+        // 2. Crear un mapa de intereses únicos a estudiantes
+        Map<String, List<Estudiante>> interesAEstudiantes = new HashMap<>();
+
+        for (Estudiante estudiante : estudiantes) {
+            for (String interes : estudiante.getIntereses()) {
+                interesAEstudiantes.computeIfAbsent(interes, k -> new ArrayList<>()).add(estudiante);
+            }
+        }
+
+        // 3. Crear grupos por interés (sin restricción de pertenencia única)
+        List<GrupoEstudio> grupos = new ArrayList<>();
+        final int MIN_MIEMBROS = 3;
+        final int MAX_MIEMBROS = 5;
+
+        // Ordenar por interés con más estudiantes primero
+        List<Map.Entry<String, List<Estudiante>>> interesesOrdenados = interesAEstudiantes.entrySet().stream()
+                .sorted((e1, e2) -> Integer.compare(e2.getValue().size(), e1.getValue().size()))
+                .collect(Collectors.toList());
+
+        for (Map.Entry<String, List<Estudiante>> entry : interesesOrdenados) {
+            String interes = entry.getKey();
+            List<Estudiante> estudiantesInteres = entry.getValue();
+
+            if (estudiantesInteres.size() >= MIN_MIEMBROS) {
+                // Dividir en grupos del tamaño máximo permitido
+                for (int i = 0; i < estudiantesInteres.size(); i += MAX_MIEMBROS) {
+                    List<Estudiante> miembros = estudiantesInteres.subList(
+                            i,
+                            Math.min(i + MAX_MIEMBROS, estudiantesInteres.size())
+                    );
+
+                    grupos.add(crearGrupoPorInteres(miembros, interes, grupos.size() + 1));
+                }
+            }
+        }
+
+        // 4. Persistir los nuevos grupos
+        utilPersistencia.agregarGrupos(grupos);
+
+        // 5. Actualizar la información de grupos en cada estudiante
+        actualizarGruposEnEstudiantes(grupos);
+
         return grupos;
+    }
+
+    public void actualizarGruposEnEstudiantes(List<GrupoEstudio> grupos) {
+        for (GrupoEstudio grupo : grupos) {
+            for (String idMiembro : grupo.getIdMiembros()) {
+                try {
+                    Estudiante estudiante = (Estudiante) buscarUsuario(idMiembro);
+                    if (estudiante != null && !estudiante.getGrupos().contains(grupo.getIdGrupo())) {
+                        estudiante.agregarGrupo(grupo.getIdGrupo());
+                    }
+                } catch (ClassCastException e) {
+                    System.err.println("El usuario " + idMiembro + " no es un estudiante");
+                } catch (Exception e) {
+                    System.err.println("Error actualizando grupo para estudiante " + idMiembro + ": " + e.getMessage());
+                }
+            }
+        }
+    }
+    private GrupoEstudio crearGrupoPorInteres(List<Estudiante> miembros, String interes, int numeroGrupo) throws OperacionFallidaException {
+        String grupoId = "GRP-" + interes.toLowerCase().replace(" ", "-") + "-" + numeroGrupo;
+
+        return new GrupoEstudio(
+                grupoId,
+                "Grupo de " + interes + " #" + numeroGrupo,
+                "Grupo especializado en " + interes,
+                new LinkedList<>(miembros.stream()
+                        .map(Estudiante::getId)
+                        .collect(Collectors.toList())),
+                new LinkedList<>(),
+                new Date()
+        );
+    }
+
+    private void manejarEstudiantesSinGrupo(List<Estudiante> todosEstudiantes,
+                                            Set<Estudiante> asignados,
+                                            List<GrupoEstudio> grupos) throws OperacionFallidaException {
+        List<Estudiante> sinGrupo = todosEstudiantes.stream()
+                .filter(e -> !asignados.contains(e))
+                .collect(Collectors.toList());
+
+        if (!sinGrupo.isEmpty()) {
+            // Intentar agrupar por segundo interés no cubierto
+            Map<String, List<Estudiante>> interesesSecundarios = new HashMap<>();
+
+            for (Estudiante estudiante : sinGrupo) {
+                for (String interes : estudiante.getIntereses()) {
+                    // Verificar si ya existe un grupo para este interés
+                    boolean existeGrupo = grupos.stream()
+                            .anyMatch(g -> g.getDescripcion().contains(interes));
+
+                    if (!existeGrupo) {
+                        interesesSecundarios.computeIfAbsent(interes, k -> new ArrayList<>())
+                                .add(estudiante);
+                        break; // Solo considerar un interés secundario por estudiante
+                    }
+                }
+            }
+
+            // Crear grupos con intereses secundarios no cubiertos
+            for (Map.Entry<String, List<Estudiante>> entry : interesesSecundarios.entrySet()) {
+                if (entry.getValue().size() >= 3) { // Mínimo para grupo
+                    grupos.add(crearGrupoPorInteres(entry.getValue(), entry.getKey(), grupos.size() + 1));
+                }
+            }
+        }
+    }
+
+    private GrupoEstudio crearGrupoEstudio(List<Estudiante> miembros, String intereses, int numeroGrupo) throws OperacionFallidaException {
+        return new GrupoEstudio(
+                "GRP-" + UUID.randomUUID().toString().substring(0, 8),
+                "Grupo " + numeroGrupo + " (" + intereses + ")",
+                "Grupo formado por intereses comunes: " + intereses,
+                new LinkedList<>(miembros.stream()
+                        .map(Estudiante::getId)
+                        .collect(Collectors.toList())),
+                new LinkedList<>(),
+                new Date()
+        );
     }
 
 
@@ -484,7 +585,8 @@ public class UtilRedSocial {
         return contenidos != null ? contenidos : new ArrayList<>();
     }
 
-    public List<GrupoEstudio> obtenerGrupos() {
+    public List<GrupoEstudio> obtenerGrupos() throws OperacionFallidaException {
+        formarGruposAutomaticos(utilPersistencia.obtenerTodosUsuarios());
         return utilPersistencia.obtenerTodosGrupos();
     }
 
@@ -542,6 +644,138 @@ public class UtilRedSocial {
         } catch (Exception e) {
             utilLog.logSevere("Error buscando usuario por correo: " + e.getMessage());
             return null;
+        }
+    }
+
+    public void modificarContenido(Contenido contenidoActualizado) {
+        if (contenidoActualizado == null) {
+            throw new IllegalArgumentException("El contenido actualizado no puede ser nulo");
+        }
+
+        Contenido contenidoExistente = this.buscarContenidoPorId(contenidoActualizado.getId());
+        if (contenidoExistente != null) {
+            this.eliminarContenido(contenidoExistente);
+            this.guardarContenido(contenidoActualizado);
+            utilLog.logInfo("Contenido modificado: " + contenidoActualizado.getId());
+        } else {
+            throw new IllegalArgumentException("Contenido con ID " + contenidoActualizado.getId() + " no encontrado");
+        }
+    }
+
+    public Contenido obtenerContenidoPorId(String contenidoId) {
+        if (contenidoId == null || contenidoId.trim().isEmpty()) {
+            throw new IllegalArgumentException("El ID del contenido no puede ser nulo o vacío");
+        }
+
+        Contenido contenido = this.buscarContenidoPorId(contenidoId);
+        if (contenido == null) {
+            utilLog.logWarning("Contenido no encontrado: " + contenidoId);
+        }
+        return contenido;
+    }
+
+    public boolean existeContenido(String contenidoId) {
+        if (contenidoId == null || contenidoId.trim().isEmpty()) {
+            throw new IllegalArgumentException("El ID del contenido no puede ser nulo o vacío");
+        }
+
+        Contenido contenido = this.buscarContenidoPorId(contenidoId);
+        boolean existe = contenido != null;
+        utilLog.logInfo("Contenido con ID " + contenidoId + " existe: " + existe);
+        return existe;
+    }
+
+    public boolean eliminarContenidoPorId(String contenidoId) {
+        if (contenidoId == null || contenidoId.trim().isEmpty()) {
+            throw new IllegalArgumentException("El ID del contenido no puede ser nulo o vacío");
+        }
+
+        try {
+            Contenido contenido = this.buscarContenidoPorId(contenidoId);
+            if (contenido != null) {
+                boolean eliminado = this.eliminarContenido(contenido);
+                utilLog.logInfo("Contenido eliminado: " + contenidoId);
+                return eliminado;
+            } else {
+                utilLog.logWarning("Contenido no encontrado para eliminar: " + contenidoId);
+                return false;
+            }
+        } catch (Exception e) {
+            utilLog.logSevere("Error al eliminar contenido: " + e.getMessage());
+            return false;
+        }
+    }
+
+    public Collection<Object> obtenerContenidosDeGrupo(String idGrupo) {
+        if (idGrupo == null || idGrupo.trim().isEmpty()) {
+            throw new IllegalArgumentException("El ID del grupo no puede ser nulo o vacío");
+        }
+
+        GrupoEstudio grupo = this.buscarGrupoPorId(idGrupo);
+        if (grupo == null) {
+            utilLog.logWarning("Grupo no encontrado: " + idGrupo);
+            return Collections.emptyList();
+        }
+
+        List<Contenido> contenidos = utilPersistencia.obtenerContenidosPorGrupo(idGrupo);
+        if (contenidos == null || contenidos.isEmpty()) {
+            utilLog.logInfo("No hay contenidos asociados al grupo: " + idGrupo);
+            return Collections.emptyList();
+        }
+
+        return Collections.singleton(contenidos);
+    }
+
+    public Collection<Object> obtenerMensajesDeGrupo(String idGrupo) throws OperacionFallidaException {
+        if (idGrupo == null || idGrupo.trim().isEmpty()) {
+            throw new IllegalArgumentException("El ID del grupo no puede ser nulo o vacío");
+        }
+
+        GrupoEstudio grupo = this.buscarGrupoPorId(idGrupo);
+        if (grupo == null) {
+            utilLog.logWarning("Grupo no encontrado: " + idGrupo);
+            return Collections.emptyList();
+        }
+
+        Collection<Object> mensajes = utilPersistencia.obtenerMensajesPorGrupo(idGrupo);
+        if (mensajes == null || mensajes.isEmpty()) {
+            utilLog.logInfo("No hay mensajes asociados al grupo: " + idGrupo);
+            return Collections.emptyList();
+        }
+
+        return mensajes;
+    }
+
+    public void modificarGrupo(GrupoEstudio grupoExistente) {
+        if (grupoExistente == null) {
+            throw new IllegalArgumentException("El grupo no puede ser nulo");
+        }
+
+        GrupoEstudio grupoActual = this.buscarGrupoPorId(grupoExistente.getIdGrupo());
+        if (grupoActual != null) {
+            // Actualizar los campos necesarios
+            grupoActual.setNombre(grupoExistente.getNombre());
+            grupoActual.setDescripcion(grupoExistente.getDescripcion());
+            grupoActual.setFechaCreacion(grupoExistente.getFechaCreacion());
+
+            utilPersistencia.actualizarGrupo(grupoActual);
+            utilLog.logInfo("Grupo modificado: " + grupoActual.getIdGrupo());
+        } else {
+            throw new IllegalArgumentException("Grupo con ID " + grupoExistente.getIdGrupo() + " no encontrado");
+        }
+    }
+
+    public void eliminarGrupoPorId(String grupoId) {
+        if (grupoId == null || grupoId.trim().isEmpty()) {
+            throw new IllegalArgumentException("El ID del grupo no puede ser nulo o vacío");
+        }
+
+        GrupoEstudio grupo = this.buscarGrupoPorId(grupoId);
+        if (grupo != null) {
+            utilPersistencia.eliminarGrupo(grupoId);
+            utilLog.logInfo("Grupo eliminado: " + grupoId);
+        } else {
+            utilLog.logWarning("Grupo no encontrado para eliminar: " + grupoId);
         }
     }
 }

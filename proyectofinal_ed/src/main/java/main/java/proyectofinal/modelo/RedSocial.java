@@ -6,6 +6,9 @@ import main.java.proyectofinal.utils.UtilRedSocial;
 
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 /**
  * Clase principal que coordina todas las operaciones de la red social
@@ -20,9 +23,14 @@ public class RedSocial {
     private ArbolContenidos arbolContenidos;
     private GrafoAfinidad grafoAfinidad;
     private PriorityQueue<SolicitudAyuda> colaSolicitudes;
+    private List<GrupoEstudio> gruposEstudio;
+    private Map<String, GrupoEstudio> mapaGruposPorId;
+    private Map<String, Set<String>> miembrosPorGrupo;
+    private Map<String, Set<String>> gruposPorMiembro;
+    private static final Logger LOGGER = Logger.getLogger(RedSocial.class.getName());
 
     // Constructor
-    public RedSocial(UtilRedSocial utilRed) {
+    public RedSocial(UtilRedSocial utilRed) throws OperacionFallidaException {
         verificarArchivosPersistencia();
         this.utilRed = Objects.requireNonNull(utilRed, "UtilRedSocial no puede ser nulo");
         this.usuarios = utilRed.obtenerUsuarios() != null ? utilRed.obtenerUsuarios() : new ArrayList<>();
@@ -30,10 +38,23 @@ public class RedSocial {
         this.grafoAfinidad = new GrafoAfinidad();
         this.colaSolicitudes = new PriorityQueue<>(Comparator.comparingInt(s -> s.getUrgencia().ordinal()));
         this.colaSolicitudes.addAll(utilRed.obtenerSolicitudes());
+        this.gruposEstudio = new ArrayList<>();
+        this.mapaGruposPorId = new HashMap<>();
         //this.arbolContenidos.inicializarConLista(utilRed.obtenerContenidos());
         cargarContenidosAlArbol();
         cargarRelacionesAfinidad();
+        // En tu método de inicialización:
+        validarIntegridadGrupos();
+        limpiarGruposDuplicados();
+        consolidarGrupos();
         grafoAfinidad.calcularAfinidades();
+        List<GrupoEstudio> gruposExistentes = utilRed.obtenerGrupos();
+        if (gruposExistentes != null) {
+            gruposExistentes.forEach(grupo -> {
+                this.gruposEstudio.add(grupo);
+                this.mapaGruposPorId.put(grupo.getId(), grupo);
+            });
+        }
     }
 
     private void verificarArchivosPersistencia() {
@@ -49,7 +70,7 @@ public class RedSocial {
     }
 
     // Métodos de inicialización
-    private void cargarRelacionesAfinidad() {
+    private void cargarRelacionesAfinidad() throws OperacionFallidaException {
         usuarios.stream()
                 .filter(u -> u instanceof Estudiante)
                 .map(u -> (Estudiante) u)
@@ -312,20 +333,161 @@ public class RedSocial {
     }
 
     // Métodos de grupos de estudio
-    public List<GrupoEstudio> formarGruposAutomaticos() {
-        List<GrupoEstudio> grupos = utilRed.formarGruposAutomaticos(this.usuarios);
-        utilRed.guardarGrupos(grupos);
+    public List<GrupoEstudio> formarGruposAutomaticos(List<Usuario> usuarios) throws OperacionFallidaException {
+        System.out.println("[DEBUG] Iniciando formación de grupos...");
 
-        // Actualizar relaciones de afinidad para los nuevos grupos
-        for (GrupoEstudio grupo : grupos) {
-            List<String> miembrosIds = grupo.getIdMiembros();
-            for (int i = 0; i < miembrosIds.size(); i++) {
-                for (int j = i + 1; j < miembrosIds.size(); j++) {
-                    actualizarRelacionAfinidad(miembrosIds.get(i), miembrosIds.get(j));
-                }
+        // 1. Filtrar estudiantes válidos (con intereses)
+        List<Estudiante> estudiantesValidos = usuarios.stream()
+                .filter(u -> u instanceof Estudiante)
+                .map(u -> (Estudiante) u)
+                .filter(e -> e.getIntereses() != null && !e.getIntereses().isEmpty())
+                .collect(Collectors.toList());
+
+        System.out.println("[DEBUG] Estudiantes válidos: " + estudiantesValidos.size());
+        if (estudiantesValidos.isEmpty()) {
+            System.out.println("[WARN] No hay estudiantes válidos para formar grupos");
+            return Collections.emptyList();
+        }
+
+        // 2. Mapa de intereses
+        Map<String, List<Estudiante>> interesAEstudiantes = new HashMap<>();
+        Set<String> gruposUnicos = new HashSet<>();
+
+        // 3. Formar grupos
+        List<GrupoEstudio> gruposFormados = new ArrayList<>();
+
+        for (Estudiante estudiante : estudiantesValidos) {
+            for (String interes : estudiante.getIntereses()) {
+                interesAEstudiantes.computeIfAbsent(interes, k -> new ArrayList<>()).add(estudiante);
             }
         }
-        return grupos;
+
+        for (Map.Entry<String, List<Estudiante>> entry : interesAEstudiantes.entrySet()) {
+            String interes = entry.getKey();
+            List<Estudiante> miembros = entry.getValue();
+
+            if (miembros.size() < 3) {
+                System.out.println("[DEBUG] No suficientes miembros (" + miembros.size() + ") para: " + interes);
+                continue;
+            }
+
+            // Crear clave única basada en miembros e interés
+            String claveUnica = interes + "_" + miembros.stream()
+                    .map(Estudiante::getId)
+                    .sorted()
+                    .collect(Collectors.joining("_"));
+
+            // Verificar si el grupo ya existe en esta ejecución
+            if (gruposUnicos.contains(claveUnica)) {
+                System.out.println("[DEBUG] Grupo duplicado detectado: " + claveUnica);
+                continue;
+            }
+
+            // Crear lista de IDs de miembros
+            LinkedList<String> idsMiembros = miembros.stream()
+                    .map(Estudiante::getId)
+                    .collect(Collectors.toCollection(LinkedList::new));
+
+            try {
+                // Crear nuevo grupo usando el constructor adecuado
+                GrupoEstudio grupo = new GrupoEstudio(
+                        null, // ID será generado automáticamente
+                        "Grupo de " + interes + " #" + (gruposFormados.size() + 1),
+                        "Grupo para " + interes + " con " + miembros.size() + " miembros",
+                        idsMiembros,
+                        new LinkedList<>(), // Lista vacía de contenidos
+                        new Date()
+                );
+
+                // Establecer el interés (si tu clase tiene este campo)
+                // grupo.setInteres(interes); // Descomentar si existe este método
+
+                // Registrar grupo
+                gruposFormados.add(grupo);
+                gruposUnicos.add(claveUnica);
+
+                System.out.println("[DEBUG] Nuevo grupo creado: " + grupo.getIdGrupo());
+            } catch (OperacionFallidaException e) {
+                System.err.println("Error al crear grupo: " + e.getMessage());
+            }
+        }
+
+        return gruposFormados;
+    }
+
+    private void actualizarRelacionAfinidad(Estudiante estudiante, Estudiante estudiante1) {
+        int pesoActual = grafoAfinidad.obtenerPesoAfinidad(estudiante, estudiante1);
+        grafoAfinidad.establecerAfinidad(estudiante, estudiante1, pesoActual + 1);
+        System.out.printf("[DEBUG] Afinidad actualizada entre %s y %s: %d%n",
+                estudiante.getNombre(), estudiante1.getNombre(), pesoActual + 1);
+    }
+
+    private GrupoEstudio crearGrupoPorInteres(List<Estudiante> miembros, String interes, int numeroGrupo)
+            throws OperacionFallidaException {
+
+        // 1. Validaciones exhaustivas
+        final int MIN_MIEMBROS = 3;
+        final int MAX_MIEMBROS = 5;
+
+        if (miembros == null) {
+            throw new OperacionFallidaException("La lista de miembros no puede ser nula");
+        }
+
+        if (miembros.size() < MIN_MIEMBROS) {
+            throw new OperacionFallidaException(
+                    String.format("Se requieren al menos %d miembros para formar un grupo. Actual: %d",
+                            MIN_MIEMBROS, miembros.size())
+            );
+        }
+
+        if (miembros.size() > MAX_MIEMBROS) {
+            throw new OperacionFallidaException(
+                    String.format("Un grupo no puede tener más de %d miembros. Actual: %d",
+                            MAX_MIEMBROS, miembros.size())
+            );
+        }
+
+        if (interes == null || interes.trim().isEmpty()) {
+            throw new OperacionFallidaException("El interés del grupo no puede estar vacío");
+        }
+
+        // 2. Preparar datos del grupo
+        String nombreGrupo = String.format("Grupo de %s #%d", interes, numeroGrupo);
+        String descripcion = String.format("Grupo autogenerado para %s con %d miembros",
+                interes, miembros.size());
+
+        LinkedList<String> idsMiembros = miembros.stream()
+                .map(Estudiante::getId)
+                .collect(Collectors.toCollection(LinkedList::new));
+
+        // 3. Crear instancia del grupo
+        GrupoEstudio grupo;
+        try {
+            grupo = new GrupoEstudio(
+                    null, // ID autogenerado
+                    nombreGrupo,
+                    descripcion,
+                    idsMiembros,
+                    new LinkedList<>(), // Lista vacía de contenidos
+                    new Date()
+            );
+        } catch (Exception e) {
+            throw new OperacionFallidaException("Error al crear el grupo: " + e.getMessage());
+        }
+
+        // 4. Actualizar relaciones de afinidad (completo)
+        for (int i = 0; i < miembros.size(); i++) {
+            for (int j = i + 1; j < miembros.size(); j++) {
+                actualizarRelacionAfinidad(miembros.get(i).getId(), miembros.get(j).getId());
+            }
+        }
+
+        // 5. Persistir y retornar
+        utilRed.guardarGrupo(grupo);
+        System.out.printf("[DEBUG] Grupo creado: %s (%d miembros)%n",
+                nombreGrupo, miembros.size());
+
+        return grupo;
     }
 
 
@@ -454,7 +616,7 @@ public class RedSocial {
         return todasSolicitudes;
     }
 
-    public List<String> obtenerGruposEstudio(String userId) {
+    public List<String> obtenerGruposEstudio(String userId) throws OperacionFallidaException {
         List<String> gruposEstudio = new ArrayList<>();
         for (GrupoEstudio grupo : utilRed.obtenerGrupos()) {
             if (grupo.getIdMiembros().contains(userId)) {
@@ -551,19 +713,38 @@ public class RedSocial {
     }
 
     public Contenido buscarContenido(String contenidoId) {
-        // 1. Buscar el contenido en el árbol
-        Contenido contenido = arbolContenidos.buscarPorId(contenidoId);
-
-        if (contenido == null) {
-            throw new IllegalArgumentException("Contenido no encontrado");
+        // Input validation
+        if (contenidoId == null || contenidoId.trim().isEmpty()) {
+            throw new IllegalArgumentException("ID de contenido inválido");
         }
 
-        // 2. Cargar las valoraciones asociadas desde la base de datos
-        List<Valoracion> valoraciones = cargarValoracionesParaContenido(contenidoId);
-        contenido.setValoraciones(new LinkedList<>(valoraciones));
+        // 1. Try tree search first
+        Contenido contenido = arbolContenidos.buscarPorId(contenidoId);
 
-        System.out.println("[DEBUG] Contenido encontrado - ID: " + contenidoId +
-                " | Valoraciones: " + valoraciones.size());
+        // 2. If not found, try database fallback
+        if (contenido == null) {
+            System.out.println("[DEBUG] Contenido no encontrado en árbol, intentando base de datos");
+            contenido = utilRed.obtenerContenidoPorId(contenidoId);
+
+            if (contenido != null) {
+                // Optional: Add to tree for future accesses
+                arbolContenidos.insertar(contenido);
+                System.out.println("[DEBUG] Contenido cargado desde base de datos");
+            }
+        }
+
+        if (contenido == null) {
+            throw new IllegalArgumentException("El contenido solicitado no existe");
+        }
+
+        // Load ratings
+        try {
+            List<Valoracion> valoraciones = cargarValoracionesParaContenido(contenidoId);
+            contenido.setValoraciones(new LinkedList<>(valoraciones));
+        } catch (Exception e) {
+            System.err.println("Error cargando valoraciones, continuando sin ellas");
+            contenido.setValoraciones(new LinkedList<>());
+        }
 
         return contenido;
     }
@@ -647,7 +828,7 @@ public class RedSocial {
     }
 
 
-    public String obtenerGruposEstudioPorUsuario(String id) {
+    public String obtenerGruposEstudioPorUsuario(String id) throws OperacionFallidaException {
         // Se inicializa la lista de grupos
         List<GrupoEstudio> grupos = utilRed.obtenerGrupos();
 
@@ -718,13 +899,56 @@ public class RedSocial {
     }
 
     public boolean eliminarContenido(String contenidoId) {
-        Contenido contenido = arbolContenidos.buscarPorId(contenidoId);
-        if (contenido != null) {
-            arbolContenidos.eliminar(contenido);
-            utilRed.eliminarContenido(contenidoId);
-            return true;
+        // Validación de entrada más robusta
+        if (contenidoId == null || contenidoId.trim().isEmpty()) {
+            throw new IllegalArgumentException("El ID de contenido no puede ser nulo o vacío");
         }
-        return false;
+
+        System.out.println("[DEBUG] Iniciando proceso de eliminación para contenido ID: " + contenidoId);
+
+        try {
+            // 1. Verificar existencia primero
+            boolean existeEnArbol = arbolContenidos.buscarPorId(contenidoId) != null;
+            boolean existeEnDB = utilRed.existeContenido(contenidoId);
+
+            if (!existeEnArbol && !existeEnDB) {
+                System.out.println("[WARN] Eliminación fallida: El contenido no existe en ningún almacenamiento");
+                return false;
+            }
+
+            // 2. Eliminar de ambos lugares independientemente
+            boolean eliminadoDelArbol = true; // Asumir éxito si no estaba en árbol
+            if (existeEnArbol) {
+                System.out.println("[DEBUG] Eliminando del árbol binario");
+                eliminadoDelArbol = arbolContenidos.eliminar(buscarContenido(contenidoId)); // Versión simplificada
+            }
+
+            System.out.println("[DEBUG] Eliminando de base de datos");
+            boolean eliminadoDeDB = utilRed.eliminarContenidoPorId(contenidoId); // Método mejorado
+
+            // 3. Determinar resultado
+            if (existeEnArbol && !eliminadoDelArbol) {
+                System.out.println("[ERROR] Falló eliminación del árbol para contenido existente");
+                return false;
+            }
+
+            if (!eliminadoDeDB) {
+                System.out.println("[WARN] El contenido no pudo ser eliminado de la base de datos");
+                // Puede considerarse éxito si al menos se eliminó del árbol
+                return existeEnArbol && eliminadoDelArbol;
+            }
+
+            System.out.println("[INFO] Eliminación exitosa de todos los almacenamientos");
+            return true;
+
+        } catch (IllegalArgumentException e) {
+            System.err.println("[ERROR] Problema con el ID del contenido: " + e.getMessage());
+            return false;
+        } catch (Exception e) {
+            System.err.println("[ERROR CRÍTICO] Error inesperado al eliminar: " + e.getMessage());
+            e.printStackTrace();
+            return false;
+        }
     }
 
     public boolean reactivarUsuario(String correo) {
@@ -736,5 +960,290 @@ public class RedSocial {
             return true;
         }
         return false;
+    }
+
+    public boolean actualizarContenido(Contenido contenidoActualizado) {
+        Objects.requireNonNull(contenidoActualizado, "El contenido no puede ser nulo");
+        Contenido contenidoExistente = arbolContenidos.buscarPorId(contenidoActualizado.getId());
+        if (contenidoExistente != null) {
+            arbolContenidos.modificar(contenidoActualizado);
+            utilRed.modificarContenido(contenidoActualizado);
+            return true;
+        }
+        return false;
+    }
+
+    public List<GrupoEstudio> obtenerTodosGrupos() throws OperacionFallidaException {
+        return utilRed.obtenerGrupos();
+    }
+
+    public void limpiarGruposDuplicados() {
+        Map<String, GrupoEstudio> gruposUnicos = new HashMap<>();
+        List<GrupoEstudio> gruposAEliminar = new ArrayList<>();
+
+        // 1. Identificar duplicados
+        for (GrupoEstudio grupo : this.gruposEstudio) {
+            String claveUnica = generarClaveUnica(grupo);
+            if (gruposUnicos.containsKey(claveUnica)) {
+                gruposAEliminar.add(grupo);
+                LOGGER.warning("Grupo duplicado detectado: " + grupo.getId());
+            } else {
+                gruposUnicos.put(claveUnica, grupo);
+            }
+        }
+
+        // 2. Eliminar duplicados
+        gruposAEliminar.forEach(grupo -> {
+            this.gruposEstudio.remove(grupo);
+            LOGGER.info("Grupo eliminado: " + grupo.getId());
+        });
+
+        // 3. Reconstruir índices
+        this.reconstruirIndicesGrupos();
+    }
+
+    private String generarClaveUnica(GrupoEstudio grupo) {
+        // Clave basada en nombre y miembros (ignorando ID y timestamp)
+        List<String> miembrosOrdenados = new ArrayList<>(grupo.getIdMiembros());
+        Collections.sort(miembrosOrdenados);
+        return grupo.getNombre() + "|" + String.join(",", miembrosOrdenados);
+    }
+
+    public void validarIntegridadGrupos() {
+        this.gruposEstudio.forEach(grupo -> {
+            // Verificar miembros existentes
+            grupo.getIdMiembros().removeIf(idMiembro ->
+                    this.buscarUsuario(idMiembro) == null
+            );
+
+            // Verificar ID válido
+            if (!grupo.getId().startsWith("GRP-") && !grupo.getId().matches("\\d+")) {
+                LOGGER.severe("ID de grupo inválido: " + grupo.getId());
+            }
+
+        });
+    }
+
+    public void consolidarGrupos() {
+        // 1. Agrupar por clave única
+        Map<String, List<GrupoEstudio>> gruposPorClave = this.gruposEstudio.stream()
+                .collect(Collectors.groupingBy(this::generarClaveUnica));
+
+        // 2. Procesar cada grupo de duplicados
+        gruposPorClave.values().stream()
+                .filter(lista -> lista.size() > 1)
+                .forEach(this::procesarDuplicados);
+    }
+
+    private void procesarDuplicados(List<GrupoEstudio> duplicados) {
+        // Conservar el grupo más reciente
+        GrupoEstudio grupoPrincipal = duplicados.stream()
+                .max(Comparator.comparing(g -> g.getFechaCreacion().getTime())) // Convertir Date a long
+                .orElseThrow(() -> new IllegalStateException("No se pudo determinar el grupo principal"));
+
+        // Transferir datos de los duplicados
+        duplicados.stream()
+                .filter(g -> !g.equals(grupoPrincipal))
+                .forEach(grupo -> {
+                    // 1. Transferir contenidos
+                    if (!grupo.getContenidos().isEmpty()) {
+                        LOGGER.info(String.format(
+                                "Transfiriendo %d contenidos de %s a %s",
+                                grupo.getContenidos().size(),
+                                grupo.getId(),
+                                grupoPrincipal.getId()
+                        ));
+                        grupoPrincipal.getContenidos().addAll(grupo.getContenidos());
+                    }
+
+                    // 2. Transferir mensajes (si aplica)
+                    transferirMensajes(grupo, grupoPrincipal);
+
+                    // 3. Registrar la consolidación
+                    LOGGER.info(String.format(
+                            "Consolidado grupo %s (%s) en %s (%s)",
+                            grupo.getId(),
+                            new Date(grupo.getFechaCreacion().getTime()),
+                            grupoPrincipal.getId(),
+                            new Date(grupoPrincipal.getFechaCreacion().getTime())
+                    ));
+
+                    // 4. Eliminar el duplicado
+                    this.gruposEstudio.remove(grupo);
+                });
+    }
+
+    private void transferirMensajes(GrupoEstudio origen, GrupoEstudio destino) {
+        if (origen.getMensajes() != null && !origen.getMensajes().isEmpty()) {
+            LOGGER.info(String.format(
+                    "Transfiriendo %d mensajes de %s a %s",
+                    origen.getMensajes().size(),
+                    origen.getId(),
+                    destino.getId()
+            ));
+            destino.getMensajes().addAll(origen.getMensajes());
+        }
+    }
+
+    /**
+     * Reconstruye todos los índices y estructuras auxiliares de grupos
+     */
+    public void reconstruirIndicesGrupos() {
+        LOGGER.info("Iniciando reconstrucción de índices de grupos...");
+        long inicio = System.currentTimeMillis();
+
+        try {
+            // 1. Reconstruir mapa rápido por ID
+            mapaGruposPorId.clear();
+            gruposEstudio.forEach(grupo -> {
+                if (grupo.getId() != null && !grupo.getId().isEmpty()) {
+                    mapaGruposPorId.put(grupo.getId(), grupo);
+                } else {
+                    LOGGER.warning("Grupo con ID nulo o vacío encontrado: " + grupo.getNombre());
+                }
+            });
+
+            // 2. Reconstruir índice de miembros
+            miembrosPorGrupo.clear();
+            for (GrupoEstudio grupo : gruposEstudio) {
+                for (String idMiembro : grupo.getIdMiembros()) {
+                    miembrosPorGrupo.computeIfAbsent(grupo.getId(), k -> new HashSet<>())
+                            .add(idMiembro);
+                }
+            }
+
+            // 3. Reconstruir índice inverso (grupos por miembro)
+            gruposPorMiembro.clear();
+            for (GrupoEstudio grupo : gruposEstudio) {
+                for (String idMiembro : grupo.getIdMiembros()) {
+                    gruposPorMiembro.computeIfAbsent(idMiembro, k -> new HashSet<>())
+                            .add(grupo.getId());
+                }
+            }
+
+            long duracion = System.currentTimeMillis() - inicio;
+            LOGGER.log(Level.INFO, "Índices reconstruidos. Grupos: {0}, Miembros indexados: {1}, Tiempo: {2}ms",
+                    new Object[]{
+                            gruposEstudio.size(),
+                            miembrosPorGrupo.values().stream().mapToInt(Set::size).sum(),
+                            duracion
+                    });
+        } catch (Exception e) {
+            LOGGER.log(Level.SEVERE, "Error reconstruyendo índices: " + e.getMessage(), e);
+        }
+    }
+
+    public boolean eliminarContenidoDeGrupo(String grupoId, String contenidoId) {
+        // Validación de entrada
+        if (grupoId == null || grupoId.trim().isEmpty()) {
+            throw new IllegalArgumentException("El ID del grupo no puede ser nulo o vacío");
+        }
+        if (contenidoId == null || contenidoId.trim().isEmpty()) {
+            throw new IllegalArgumentException("El ID del contenido no puede ser nulo o vacío");
+        }
+
+        // Buscar el grupo
+        GrupoEstudio grupo = mapaGruposPorId.get(grupoId);
+        if (grupo == null) {
+            throw new IllegalArgumentException("Grupo no encontrado con ID: " + grupoId);
+        }
+
+        // Buscar el contenido en el grupo
+        Contenido contenido = arbolContenidos.buscarPorId(contenidoId);
+        if (contenido == null) {
+            throw new IllegalArgumentException("Contenido no encontrado con ID: " + contenidoId);
+        }
+
+        // Eliminar el contenido del grupo
+        boolean eliminado = grupo.getContenidos().removeIf(c -> false);
+        System.out.println("[WARN] El contenido no estaba presente en el grupo: " + grupoId);
+        return false;
+    }
+
+    public GrupoEstudio buscarGrupoEstudio(String grupoId) {
+        if (mapaGruposPorId == null) {
+            throw new IllegalStateException("mapaGruposPorId no ha sido inicializado");
+        }
+        return mapaGruposPorId.get(grupoId);
+    }
+
+    public boolean unirUsuarioAGrupo(String usuarioId, String grupoId) {
+        // Validación de entrada
+        if (usuarioId == null || usuarioId.trim().isEmpty()) {
+            throw new IllegalArgumentException("El ID del usuario no puede ser nulo o vacío");
+        }
+        if (grupoId == null || grupoId.trim().isEmpty()) {
+            throw new IllegalArgumentException("El ID del grupo no puede ser nulo o vacío");
+        }
+
+        // Buscar el usuario
+        Usuario usuario = buscarUsuario(usuarioId);
+        if (usuario == null) {
+            throw new IllegalArgumentException("Usuario no encontrado con ID: " + usuarioId);
+        }
+
+        // Buscar el grupo
+        GrupoEstudio grupo = buscarGrupoEstudio(grupoId);
+        if (grupo == null) {
+            throw new IllegalArgumentException("Grupo no encontrado con ID: " + grupoId);
+        }
+
+        // Agregar el usuario al grupo
+        if (!grupo.getIdMiembros().contains(usuarioId)) {
+            grupo.getIdMiembros().add(usuarioId);
+            LOGGER.log(Level.INFO, "Usuario {0} unido al grupo {1}", new Object[]{usuarioId, grupoId});
+            return true;
+        } else {
+            LOGGER.log(Level.WARNING, "El usuario {0} ya está en el grupo {1}", new Object[]{usuarioId, grupoId});
+            return false;
+        }
+    }
+
+    public boolean actualizarGrupo(GrupoEstudio grupo) {
+        Objects.requireNonNull(grupo, "El grupo no puede ser nulo");
+        if (grupo.getId() == null || grupo.getId().trim().isEmpty()) {
+            throw new IllegalArgumentException("El ID del grupo no puede ser nulo o vacío");
+        }
+
+        // Verificar si el grupo existe
+        GrupoEstudio grupoExistente = buscarGrupoEstudio(grupo.getId());
+        if (grupoExistente == null) {
+            throw new IllegalArgumentException("Grupo no encontrado con ID: " + grupo.getId());
+        }
+
+        // Actualizar los datos del grupo
+        grupoExistente.setNombre(grupo.getNombre());
+        grupoExistente.setDescripcion(grupo.getDescripcion());
+
+        grupoExistente.setFechaCreacion(grupo.getFechaCreacion());
+
+        // Guardar los cambios en la base de datos
+        utilRed.modificarGrupo(grupoExistente);
+        LOGGER.log(Level.INFO, "Grupo {0} actualizado correctamente", grupo.getId());
+        return true;
+    }
+
+    public boolean eliminarGrupo(String grupoId) {
+        // Validación de entrada
+        if (grupoId == null || grupoId.trim().isEmpty()) {
+            throw new IllegalArgumentException("El ID del grupo no puede ser nulo o vacío");
+        }
+
+        // Buscar el grupo
+        GrupoEstudio grupo = buscarGrupoEstudio(grupoId);
+        if (grupo == null) {
+            throw new IllegalArgumentException("Grupo no encontrado con ID: " + grupoId);
+        }
+
+        // Eliminar el grupo de la lista y de la base de datos
+        boolean eliminado = this.gruposEstudio.remove(grupo);
+        if (eliminado) {
+            utilRed.eliminarGrupoPorId(grupoId);
+            LOGGER.log(Level.INFO, "Grupo {0} eliminado correctamente", grupoId);
+            return true;
+        } else {
+            LOGGER.log(Level.WARNING, "No se pudo eliminar el grupo {0}", grupoId);
+            return false;
+        }
     }
 }
